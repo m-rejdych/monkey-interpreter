@@ -1,6 +1,6 @@
 import { Token, TOKEN_TYPES, WHITESPACE_CHARS } from './token';
 
-class Lexer {
+export class Lexer {
   public position = 0;
   public readPosition = 0;
   public ch: string | null = null;
@@ -26,7 +26,7 @@ class Lexer {
 
     const startPosition = this.position;
 
-    while (Lexer.isLetter(this.ch)) {
+    while (isLetter(this.ch)) {
       this.readChar();
     }
 
@@ -38,7 +38,7 @@ class Lexer {
 
     const startPosition = this.position;
 
-    while (Lexer.isDigit(this.ch)) {
+    while (isDigit(this.ch)) {
       this.readChar();
     }
 
@@ -52,7 +52,13 @@ class Lexer {
 
     switch (this.ch) {
       case '=':
-        token = new Token(TOKEN_TYPES.ASSIGN, this.ch);
+        if (this.peekChar() === '=') {
+          const currentCh = this.ch;
+          this.readChar();
+          token = new Token(TOKEN_TYPES.EQ, `${currentCh}${this.ch}`);
+        } else {
+          token = new Token(TOKEN_TYPES.ASSIGN, this.ch);
+        }
         break;
       case ';':
         token = new Token(TOKEN_TYPES.SEMICOLON, this.ch);
@@ -75,16 +81,40 @@ class Lexer {
       case '}':
         token = new Token(TOKEN_TYPES.LBRACE, this.ch);
         break;
+      case '-':
+        token = new Token(TOKEN_TYPES.MINUS, this.ch);
+        break;
+      case '!':
+        if (this.peekChar() === '=') {
+          const currentCh = this.ch;
+          this.readChar();
+          token = new Token(TOKEN_TYPES.NOT_EQ, `${currentCh}${this.ch}`);
+        } else {
+          token = new Token(TOKEN_TYPES.BANG, this.ch);
+        }
+        break;
+      case '*':
+        token = new Token(TOKEN_TYPES.ASTERISK, this.ch);
+        break;
+      case '/':
+        token = new Token(TOKEN_TYPES.SLASH, this.ch);
+        break;
+      case '<':
+        token = new Token(TOKEN_TYPES.LT, this.ch);
+        break;
+      case '>':
+        token = new Token(TOKEN_TYPES.GT, this.ch);
+        break;
       case null:
         token = new Token(TOKEN_TYPES.EOF, '');
         break;
       default:
-        if (Lexer.isLetter(this.ch)) {
+        if (isLetter(this.ch)) {
           const ident = this.readIdentifier();
           return new Token(Token.lookupIdent(ident), ident);
         }
 
-        if (Lexer.isDigit(this.ch)) {
+        if (isDigit(this.ch)) {
           return new Token(TOKEN_TYPES.INT, this.readNumber());
         }
 
@@ -104,19 +134,27 @@ class Lexer {
     }
   }
 
-  static isLetter(ch: string) {
-    return ('a' <= ch && ch <= 'z') || ('A' <= ch && 'Z' >= ch) || ch === '_';
+  peekChar(): string | null {
+    if (this.readPosition >= this.input.length) {
+      return null;
+    }
+
+    return this.input[this.readPosition] as string;
   }
 
-  static isDigit(ch: string): boolean {
-    return !Number.isNaN(parseInt(ch, 10));
+  static test(input: string): void {
+    const lexer = new Lexer(input);
+
+    do {
+      console.log(lexer.nextToken());
+    } while (lexer.ch !== null);
   }
 }
 
-export function testLexer(input: string): void {
-  const lexer = new Lexer(input);
+function isLetter(ch: string) {
+  return ('a' <= ch && ch <= 'z') || ('A' <= ch && 'Z' >= ch) || ch === '_';
+}
 
-  do {
-    console.log(lexer.nextToken());
-  } while (lexer.ch !== null);
+function isDigit(ch: string): boolean {
+  return !Number.isNaN(parseInt(ch, 10));
 }
