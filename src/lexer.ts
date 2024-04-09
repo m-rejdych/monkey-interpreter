@@ -13,7 +13,7 @@ export class Lexer {
     if (this.readPosition >= this.input.length) {
       this.ch = null;
     } else {
-      this.ch = this.input[this.readPosition] as string;
+      this.ch = this.input[this.readPosition]!;
     }
 
     this.position = this.readPosition;

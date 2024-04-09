@@ -4,7 +4,7 @@ interface NodeInterface {
   tokenLiteral: () => string;
 }
 
-interface Statement extends NodeInterface {
+export interface Statement extends NodeInterface {
   statementNode: () => void;
 }
 
@@ -24,10 +24,15 @@ export class Program implements NodeInterface {
 
     return '';
   }
+
+  pushStatement(statement: Statement) {
+    this.statements.push(statement);
+  }
 }
 
 export class LetStatement implements Statement {
-  constructor(public token: Token, public name: Identifier, public value: Expression) {}
+  // TODO: make value an Expression
+  constructor(public token: Token, public name: Identifier, public value: null) {}
 
   statementNode() {}
 

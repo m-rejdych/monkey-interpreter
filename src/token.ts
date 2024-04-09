@@ -49,7 +49,7 @@ const KEYWORDS = {
 
 export const WHITESPACE_CHARS = [' ', '\n', '\r', '\t'];
 
-type TokenTypes = (typeof TOKEN_TYPES)[keyof typeof TOKEN_TYPES];
+export type TokenTypes = (typeof TOKEN_TYPES)[keyof typeof TOKEN_TYPES];
 
 type Keywords = (typeof KEYWORDS)[keyof typeof KEYWORDS];
 
