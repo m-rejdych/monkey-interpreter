@@ -2,9 +2,10 @@ import { Lexer } from './lexer';
 import { Token, TOKEN_TYPES, type TokenTypes } from './token';
 import { Program, Statement, LetStatement, Identifier } from './ast';
 
-class Parser {
+export class Parser {
   curToken: Token | null = null;
   peekToken: Token | null = null;
+  errors: string[] = [];
 
   constructor(public lexer: Lexer) {
     this.nextToken();
@@ -39,8 +40,8 @@ class Parser {
     switch (this.curToken.type) {
       case TOKEN_TYPES.LET:
         return this.parseLetStatement();
-     default:
-       return null;
+      default:
+        return null;
     }
   }
 
@@ -79,59 +80,18 @@ class Parser {
   }
 
   expectPeek(type: TokenTypes): boolean {
-    if (!this.peekTokenIs(type)) return false;
+    const isValidToken = this.peekTokenIs(type);
 
-    this.nextToken();
-    return true;
-  }
-}
+    if (isValidToken) {
+      this.nextToken();
+    } else {
+      this.peekError(type);
+    }
 
-export function testLetStatements(): void {
-  const input = `
-  let x = 5;
-  let y = 10;
-  let foobar = 838383;
-`;
-
-  const lexer = new Lexer(input);
-  const parser = new Parser(lexer);
-
-  const program = parser.parseProgram();
-
-  if (program === null) {
-    throw new Error('parseProgram returned null');
+    return isValidToken;
   }
 
-  if (program.statements.length !== 3) {
-    throw new Error(
-      `program.statements does not contain 3 statements, got ${program.statements.length}`,
-    );
+  peekError(type: TokenTypes): void {
+    this.errors.push(`Expected next token: ${type}, got: ${this.peekToken?.type}`);
   }
-
-  const expectedIdentifiers = ['x', 'y', 'foobar'];
-
-  for (let i = 0; i < expectedIdentifiers.length; i++) {
-    const statement = program.statements[i]!;
-    const expectedIdentifier = expectedIdentifiers[i]!;
-
-    testLetStatement(statement, expectedIdentifier);
-  }
-
-  console.log(program);
-}
-
-function testLetStatement(statement: Statement, name: string): void {
-  if (statement.tokenLiteral() !== 'let') {
-    throw new Error(`Expected token literal: "let", got: ${statement.tokenLiteral()}`);
-  }
-
-  if (!(statement instanceof LetStatement)) {
-    throw new Error(`Expected "LetStatement", got: ${statement}`);
-  }
-
-  if (statement.name.value !== name) {
-    throw new Error(`Expected letStatement.name: "${name}", got: ${statement.name.value}`);
-  }
-
-  console.log('Test passed for statement: ', statement);
 }

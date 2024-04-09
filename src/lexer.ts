@@ -76,10 +76,10 @@ export class Lexer {
         token = new Token(TOKEN_TYPES.PLUS, this.ch);
         break;
       case '{':
-        token = new Token(TOKEN_TYPES.RBRACE, this.ch);
+        token = new Token(TOKEN_TYPES.LBRACE, this.ch);
         break;
       case '}':
-        token = new Token(TOKEN_TYPES.LBRACE, this.ch);
+        token = new Token(TOKEN_TYPES.RBRACE, this.ch);
         break;
       case '-':
         token = new Token(TOKEN_TYPES.MINUS, this.ch);
@@ -140,14 +140,6 @@ export class Lexer {
     }
 
     return this.input[this.readPosition] as string;
-  }
-
-  static test(input: string): void {
-    const lexer = new Lexer(input);
-
-    do {
-      console.log(lexer.nextToken());
-    } while (lexer.ch !== null);
   }
 }
 
