@@ -30,7 +30,7 @@ let ten = 10;
       { type: TOKEN_TYPES.FUNCTION, literal: 'fn' },
       { type: TOKEN_TYPES.LPAREN, literal: '(' },
       { type: TOKEN_TYPES.IDENT, literal: 'x' },
-      { type: TOKEN_TYPES.COMMA, literal: '' },
+      { type: TOKEN_TYPES.COMMA, literal: ',' },
       { type: TOKEN_TYPES.IDENT, literal: 'y' },
       { type: TOKEN_TYPES.RPAREN, literal: ')' },
       { type: TOKEN_TYPES.LBRACE, literal: '{' },
@@ -46,7 +46,7 @@ let ten = 10;
       { type: TOKEN_TYPES.IDENT, literal: 'add' },
       { type: TOKEN_TYPES.LPAREN, literal: '(' },
       { type: TOKEN_TYPES.IDENT, literal: 'five' },
-      { type: TOKEN_TYPES.COMMA, literal: '' },
+      { type: TOKEN_TYPES.COMMA, literal: ',' },
       { type: TOKEN_TYPES.IDENT, literal: 'ten' },
       { type: TOKEN_TYPES.RPAREN, literal: ')' },
       { type: TOKEN_TYPES.SEMICOLON, literal: ';' },
@@ -61,7 +61,6 @@ let ten = 10;
       expect(isPresent).toBe(true);
 
       if (isPresent) {
-        console.log(token);
         expect(token.type).toBe(expected[i]!.type);
         expect(token.literal).toBe(expected[i]!.literal);
       }

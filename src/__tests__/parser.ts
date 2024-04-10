@@ -1,6 +1,6 @@
 import { Parser } from '../parser';
 import { Lexer } from '../lexer';
-import { Statement, LetStatement } from '../ast';
+import { Statement, LetStatement, ReturnStatement } from '../ast';
 
 describe('Let statements', () => {
   const input = `
@@ -35,6 +35,37 @@ describe('Let statements', () => {
 
       testLetStatement(statement, expectedIdentifier);
     }
+  });
+});
+
+describe('Return statements', () => {
+  const input = `
+return 5;
+return 10;
+return 993332;
+`;
+  const lexer = new Lexer(input);
+  const parser = new Parser(lexer);
+
+  const program = parser.parseProgram();
+
+  it('creates program', () => {
+    expect(program).not.toBe(null);
+  });
+
+  it('results without errors', () => {
+    checkParserErrors(parser);
+  });
+
+  it('has correct nubmer of statements', () => {
+    expect(program.statements.length).toBe(3);
+  });
+
+  it('is parses return correctly', () => {
+    program.statements.forEach((statement) => {
+      expect(statement instanceof ReturnStatement).toBe(true);
+      expect(statement.tokenLiteral()).toBe('return');
+    });
   });
 });
 

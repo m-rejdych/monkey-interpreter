@@ -41,6 +41,17 @@ export class LetStatement implements Statement {
   }
 }
 
+export class ReturnStatement implements Statement {
+  // TODO: make value an Expression
+  constructor(public token: Token, public returnValue: null) {}
+
+  statementNode() {}
+
+  tokenLiteral() {
+    return this.token.literal;
+  }
+}
+
 export class Identifier implements Expression {
   constructor(public token: Token, public value: string) {}
 
