@@ -1,18 +1,19 @@
-import { Token } from './token'
+import { Token } from './token';
 
-interface NodeInterface {
+interface Node {
   tokenLiteral: () => string;
+  string: () => string;
 }
 
-export interface Statement extends NodeInterface {
+export interface Statement extends Node {
   statementNode: () => void;
 }
 
-interface Expression extends NodeInterface {
+interface Expression extends Node {
   expressionNode: () => void;
 }
 
-export class Program implements NodeInterface {
+export class Program implements Node {
   statements: Statement[] = [];
 
   constructor() {}
@@ -25,39 +26,85 @@ export class Program implements NodeInterface {
     return '';
   }
 
+  string() {
+    return this.statements.map((statement) => statement.string()).join(' ');
+  }
+
   pushStatement(statement: Statement) {
     this.statements.push(statement);
   }
 }
 
 export class LetStatement implements Statement {
-  // TODO: make value an Expression
-  constructor(public token: Token, public name: Identifier, public value: null) {}
+  constructor(
+    public token: Token,
+    public name: Identifier,
+    // TODO: make value an Expression
+    public value: null | Expression,
+  ) {}
 
   statementNode() {}
 
   tokenLiteral() {
     return this.token.literal;
+  }
+
+  string() {
+    // TODO: Remove null check when expressions are implemented
+    return `${this.tokenLiteral()} ${this.name.string()} = ${this.value?.string() ?? ''};`;
   }
 }
 
 export class ReturnStatement implements Statement {
-  // TODO: make value an Expression
-  constructor(public token: Token, public returnValue: null) {}
+  constructor(
+    public token: Token,
+    // TODO: make value an Expression
+    public returnValue: null | Expression,
+  ) {}
 
   statementNode() {}
 
   tokenLiteral() {
     return this.token.literal;
   }
+
+  string() {
+    // TODO: Remove null check when expressions are implemented
+    return `${this.tokenLiteral()} ${this.returnValue?.string() ?? ''};`;
+  }
+}
+
+export class ExpressionStatement implements Statement {
+  constructor(
+    public token: Token,
+    public expression: null | Expression,
+  ) {}
+
+  statementNode() {}
+
+  tokenLiteral() {
+    return this.token.literal;
+  }
+
+  string() {
+    // TODO: Remove null check when expressions are implemented
+    return this.expression?.string() ?? '';
+  }
 }
 
 export class Identifier implements Expression {
-  constructor(public token: Token, public value: string) {}
+  constructor(
+    public token: Token,
+    public value: string,
+  ) {}
 
   expressionNode() {}
 
   tokenLiteral() {
     return this.token.literal;
+  }
+
+  string() {
+    return this.value;
   }
 }
