@@ -1,7 +1,8 @@
 import { Repl } from './repl';
 
 function main(): void {
-  Repl.start(process.stdin, process.stdout);
+  const repl = new Repl(process.stdin, process.stdout);
+  repl.start();
 }
 
 main();
