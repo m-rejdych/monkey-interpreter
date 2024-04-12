@@ -1,4 +1,4 @@
-import { Token, TOKEN_TYPES, WHITESPACE_CHARS } from './token';
+import { Token, TOKEN_TYPE, WHITESPACE_CHARS } from './token';
 
 export class Lexer {
   public position = 0;
@@ -55,58 +55,58 @@ export class Lexer {
         if (this.peekChar() === '=') {
           const currentCh = this.ch;
           this.readChar();
-          token = new Token(TOKEN_TYPES.EQ, `${currentCh}${this.ch}`);
+          token = new Token(TOKEN_TYPE.EQ, `${currentCh}${this.ch}`);
         } else {
-          token = new Token(TOKEN_TYPES.ASSIGN, this.ch);
+          token = new Token(TOKEN_TYPE.ASSIGN, this.ch);
         }
         break;
       case ';':
-        token = new Token(TOKEN_TYPES.SEMICOLON, this.ch);
+        token = new Token(TOKEN_TYPE.SEMICOLON, this.ch);
         break;
       case '(':
-        token = new Token(TOKEN_TYPES.LPAREN, this.ch);
+        token = new Token(TOKEN_TYPE.LPAREN, this.ch);
         break;
       case ')':
-        token = new Token(TOKEN_TYPES.RPAREN, this.ch);
+        token = new Token(TOKEN_TYPE.RPAREN, this.ch);
         break;
       case ',':
-        token = new Token(TOKEN_TYPES.COMMA, this.ch);
+        token = new Token(TOKEN_TYPE.COMMA, this.ch);
         break;
       case '+':
-        token = new Token(TOKEN_TYPES.PLUS, this.ch);
+        token = new Token(TOKEN_TYPE.PLUS, this.ch);
         break;
       case '{':
-        token = new Token(TOKEN_TYPES.LBRACE, this.ch);
+        token = new Token(TOKEN_TYPE.LBRACE, this.ch);
         break;
       case '}':
-        token = new Token(TOKEN_TYPES.RBRACE, this.ch);
+        token = new Token(TOKEN_TYPE.RBRACE, this.ch);
         break;
       case '-':
-        token = new Token(TOKEN_TYPES.MINUS, this.ch);
+        token = new Token(TOKEN_TYPE.MINUS, this.ch);
         break;
       case '!':
         if (this.peekChar() === '=') {
           const currentCh = this.ch;
           this.readChar();
-          token = new Token(TOKEN_TYPES.NOT_EQ, `${currentCh}${this.ch}`);
+          token = new Token(TOKEN_TYPE.NOT_EQ, `${currentCh}${this.ch}`);
         } else {
-          token = new Token(TOKEN_TYPES.BANG, this.ch);
+          token = new Token(TOKEN_TYPE.BANG, this.ch);
         }
         break;
       case '*':
-        token = new Token(TOKEN_TYPES.ASTERISK, this.ch);
+        token = new Token(TOKEN_TYPE.ASTERISK, this.ch);
         break;
       case '/':
-        token = new Token(TOKEN_TYPES.SLASH, this.ch);
+        token = new Token(TOKEN_TYPE.SLASH, this.ch);
         break;
       case '<':
-        token = new Token(TOKEN_TYPES.LT, this.ch);
+        token = new Token(TOKEN_TYPE.LT, this.ch);
         break;
       case '>':
-        token = new Token(TOKEN_TYPES.GT, this.ch);
+        token = new Token(TOKEN_TYPE.GT, this.ch);
         break;
       case null:
-        token = new Token(TOKEN_TYPES.EOF, '');
+        token = new Token(TOKEN_TYPE.EOF, '');
         break;
       default:
         if (isLetter(this.ch)) {
@@ -115,10 +115,10 @@ export class Lexer {
         }
 
         if (isDigit(this.ch)) {
-          return new Token(TOKEN_TYPES.INT, this.readNumber());
+          return new Token(TOKEN_TYPE.INT, this.readNumber());
         }
 
-        token = new Token(TOKEN_TYPES.ILLEGAL, this.ch);
+        token = new Token(TOKEN_TYPE.ILLEGAL, this.ch);
         break;
     }
 

@@ -1,4 +1,4 @@
-export const TOKEN_TYPES = {
+export const TOKEN_TYPE = {
   ILLEGAL: 'ILLEGAL',
   EOF: 'EOF',
 
@@ -38,30 +38,30 @@ export const TOKEN_TYPES = {
 } as const;
 
 const KEYWORDS = {
-  fn: TOKEN_TYPES.FUNCTION,
-  let: TOKEN_TYPES.LET,
-  true: TOKEN_TYPES.TRUE,
-  false: TOKEN_TYPES.FALSE,
-  if: TOKEN_TYPES.IF,
-  else: TOKEN_TYPES.ELSE,
-  return: TOKEN_TYPES.RETURN,
-} as const satisfies Record<string, TokenTypes>;
+  fn: TOKEN_TYPE.FUNCTION,
+  let: TOKEN_TYPE.LET,
+  true: TOKEN_TYPE.TRUE,
+  false: TOKEN_TYPE.FALSE,
+  if: TOKEN_TYPE.IF,
+  else: TOKEN_TYPE.ELSE,
+  return: TOKEN_TYPE.RETURN,
+} as const satisfies Record<string, TokenType>;
 
 export const WHITESPACE_CHARS = [' ', '\n', '\r', '\t'];
 
-export type TokenTypes = (typeof TOKEN_TYPES)[keyof typeof TOKEN_TYPES];
+export type TokenType = (typeof TOKEN_TYPE)[keyof typeof TOKEN_TYPE];
 
 type Keywords = (typeof KEYWORDS)[keyof typeof KEYWORDS];
 
 export class Token {
   constructor(
-    public type: TokenTypes,
+    public type: TokenType,
     public literal: string,
   ) {}
 
-  static lookupIdent(ident: string): Keywords | typeof TOKEN_TYPES.IDENT {
+  static lookupIdent(ident: string): Keywords | typeof TOKEN_TYPE.IDENT {
     if (isKeyword(ident)) return KEYWORDS[ident];
-    return TOKEN_TYPES.IDENT;
+    return TOKEN_TYPE.IDENT;
   }
 }
 

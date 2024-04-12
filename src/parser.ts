@@ -1,14 +1,42 @@
 import { Lexer } from './lexer';
-import { Token, TOKEN_TYPES, type TokenTypes } from './token';
-import { Program, Statement, LetStatement, Identifier, ReturnStatement } from './ast';
+import { Token, TOKEN_TYPE, type TokenType } from './token';
+import {
+  Program,
+  Statement,
+  Expression,
+  LetStatement,
+  Identifier,
+  ReturnStatement,
+  ExpressionStatement,
+  IntegerLiteral,
+} from './ast';
+
+type PrefixParseFn = () => Expression;
+type InfixParseFn = (expression: Expression) => Expression;
+
+const PRECEDENCE = {
+  LOWEST: 0,
+  EQUALS: 1,
+  LESSGREATER: 2,
+  SUM: 3,
+  PRODUCT: 4,
+  PREFIX: 5,
+  CALL: 6,
+} as const;
+
+type Precedence = (typeof PRECEDENCE)[keyof typeof PRECEDENCE];
 
 export class Parser {
-  curToken: Token | null = null;
-  peekToken: Token | null = null;
+  curToken: Token;
+  peekToken: Token;
   errors: string[] = [];
+  prefixParseFns: Partial<Record<TokenType, PrefixParseFn>> = {};
+  infixParseFns: Partial<Record<TokenType, InfixParseFn>> = {};
 
   constructor(public lexer: Lexer) {
-    this.nextToken();
+    this.curToken = lexer.nextToken();
+    this.peekToken = lexer.nextToken();
+    this.registerPrefix(TOKEN_TYPE.IDENT, this.parseIdentifier.bind(this));
   }
 
   nextToken(): void {
@@ -18,7 +46,6 @@ export class Parser {
 
   parseProgram(): Program {
     const program = new Program();
-    this.nextToken();
 
     while (true) {
       const statement = this.parseStatement();
@@ -28,31 +55,27 @@ export class Parser {
 
       this.nextToken();
 
-      if (this.curTokenIs(TOKEN_TYPES.EOF)) break;
+      if (this.curTokenIs(TOKEN_TYPE.EOF)) break;
     }
 
     return program;
   }
 
   parseStatement(): Statement | null {
-    if (!this.curToken) return null;
-
     switch (this.curToken.type) {
-      case TOKEN_TYPES.LET:
+      case TOKEN_TYPE.LET:
         return this.parseLetStatement();
-      case TOKEN_TYPES.RETURN:
+      case TOKEN_TYPE.RETURN:
         return this.parseReturnStatement();
       default:
-        return null;
+        return this.parseExpressionStatement();
     }
   }
 
   parseLetStatement(): LetStatement | null {
-    if (!this.curToken) return null;
-
     const letToken = this.curToken;
 
-    if (!this.expectPeek(TOKEN_TYPES.IDENT)) {
+    if (!this.expectPeek(TOKEN_TYPE.IDENT)) {
       return null;
     }
 
@@ -61,43 +84,71 @@ export class Parser {
     // TODO: make value an Expression
     const letStatement = new LetStatement(letToken, name, null);
 
-    if (!this.expectPeek(TOKEN_TYPES.ASSIGN)) {
+    if (!this.expectPeek(TOKEN_TYPE.ASSIGN)) {
       return null;
     }
 
     // TODO: Handle expression
-    while (!this.curTokenIs(TOKEN_TYPES.SEMICOLON)) {
+    while (!this.curTokenIs(TOKEN_TYPE.SEMICOLON)) {
       this.nextToken();
     }
 
     return letStatement;
   }
 
-  parseReturnStatement(): ReturnStatement | null {
-    if (!this.curToken) return null;
-
+  parseReturnStatement(): ReturnStatement {
     // TODO: make value an Expression
     const returnStatement = new ReturnStatement(this.curToken, null);
 
     this.nextToken();
 
     // TODO: Handle expression
-    while (this.curTokenIs(TOKEN_TYPES.SEMICOLON)) {
+    while (!this.curTokenIs(TOKEN_TYPE.SEMICOLON)) {
       this.nextToken();
     }
 
     return returnStatement;
   }
 
-  curTokenIs(type: TokenTypes): boolean {
+  parseExpressionStatement(): ExpressionStatement {
+    const statement = new ExpressionStatement(
+      this.curToken,
+      this.parseExpression(PRECEDENCE.LOWEST),
+    );
+
+    if (this.peekTokenIs(TOKEN_TYPE.SEMICOLON)) {
+      this.nextToken();
+    }
+
+    return statement;
+  }
+
+  parseExpression(_precedence: Precedence): Expression | null {
+    const prefix = this.prefixParseFns[this.curToken.type];
+    if (!prefix) return null;
+
+    const leftExpression = prefix();
+
+    return leftExpression;
+  }
+
+  parseIdentifier(): Identifier {
+    return new Identifier(this.curToken, this.curToken.literal);
+  }
+
+  parseIntegerLiteral(): IntegerLiteral {
+
+  }
+
+  curTokenIs(type: TokenType): boolean {
     return this.curToken?.type === type;
   }
 
-  peekTokenIs(type: TokenTypes): boolean {
+  peekTokenIs(type: TokenType): boolean {
     return this.peekToken?.type === type;
   }
 
-  expectPeek(type: TokenTypes): boolean {
+  expectPeek(type: TokenType): boolean {
     const isValidToken = this.peekTokenIs(type);
 
     if (isValidToken) {
@@ -109,7 +160,15 @@ export class Parser {
     return isValidToken;
   }
 
-  peekError(type: TokenTypes): void {
+  peekError(type: TokenType): void {
     this.errors.push(`Expected next token: ${type}, got: ${this.peekToken?.type}`);
+  }
+
+  registerPrefix(tokenType: TokenType, fn: PrefixParseFn): void {
+    this.prefixParseFns[tokenType] = fn;
+  }
+
+  registerInfix(tokenType: TokenType, fn: InfixParseFn): void {
+    this.infixParseFns[tokenType] = fn;
   }
 }

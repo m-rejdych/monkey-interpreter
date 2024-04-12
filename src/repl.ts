@@ -3,7 +3,7 @@ import util from 'util';
 import type { Readable, Writable } from 'stream';
 
 import { Lexer } from './lexer';
-import { TOKEN_TYPES } from './token';
+import { TOKEN_TYPE } from './token';
 
 const PROMPT = '>> ' as const;
 
@@ -19,7 +19,7 @@ export class Repl {
       while (true) {
         const token = lexer.nextToken();
         output.write(`${util.format(token)}\n`);
-        if (token.type === TOKEN_TYPES.EOF) {
+        if (token.type === TOKEN_TYPE.EOF) {
           output.write(PROMPT);
           break;
         }

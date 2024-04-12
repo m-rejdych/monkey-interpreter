@@ -9,7 +9,7 @@ export interface Statement extends Node {
   statementNode: () => void;
 }
 
-interface Expression extends Node {
+export interface Expression extends Node {
   expressionNode: () => void;
 }
 
@@ -77,6 +77,7 @@ export class ReturnStatement implements Statement {
 export class ExpressionStatement implements Statement {
   constructor(
     public token: Token,
+    // TODO: make value an Expression
     public expression: null | Expression,
   ) {}
 
@@ -106,5 +107,19 @@ export class Identifier implements Expression {
 
   string() {
     return this.value;
+  }
+}
+
+export class IntegerLiteral implements Expression {
+  constructor(public token: Token, public value: number) {}
+
+  tokenLiteral() {
+    return this.token.literal;
+  }
+
+  expressionNode() {}
+
+  string() {
+    return this.value.toString();
   }
 }
