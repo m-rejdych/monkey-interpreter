@@ -11,8 +11,8 @@ import {
   IntegerLiteral,
 } from './ast';
 
-type PrefixParseFn = () => Expression;
-type InfixParseFn = (expression: Expression) => Expression;
+type PrefixParseFn = () => Expression | null;
+type InfixParseFn = (expression: Expression) => Expression | null;
 
 const PRECEDENCE = {
   LOWEST: 0,
@@ -37,6 +37,7 @@ export class Parser {
     this.curToken = lexer.nextToken();
     this.peekToken = lexer.nextToken();
     this.registerPrefix(TOKEN_TYPE.IDENT, this.parseIdentifier.bind(this));
+    this.registerPrefix(TOKEN_TYPE.INT, this.parseIntegerLiteral.bind(this));
   }
 
   nextToken(): void {
@@ -136,8 +137,15 @@ export class Parser {
     return new Identifier(this.curToken, this.curToken.literal);
   }
 
-  parseIntegerLiteral(): IntegerLiteral {
+  parseIntegerLiteral(): IntegerLiteral | null {
+    const integer = parseInt(this.curToken.literal, 10);
 
+    if (Number.isNaN(integer)) {
+      this.errors.push(`${this.curToken.literal} could not be parsed as an integer`);
+      return null;
+    }
+
+    return new IntegerLiteral(this.curToken, integer);
   }
 
   curTokenIs(type: TokenType): boolean {
