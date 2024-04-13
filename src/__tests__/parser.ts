@@ -9,6 +9,7 @@ import {
   Identifier,
   Expression,
   IntegerLiteral,
+  PrefixExpression,
 } from '../ast';
 
 describe('Let statements', () => {
@@ -84,13 +85,42 @@ describe('Integer literal expression', () => {
 
   const statement = program.statements[0] ?? null;
   testExpressionStatement(statement);
+  testIntegerLiteralExpression(isExpressionStatement(statement) ? statement.expression : null, 5);
+});
 
-  it('has an IntegerLiteral expression with correct value', () => {
-    const integerLiteral = isExpressionStatement(statement) ? statement.expression : null;
-    const isIntegerLiteral = isIntegerLiteralExpression(integerLiteral);
-    expect(isIntegerLiteral).toBe(true);
-    expect(isIntegerLiteral && integerLiteral.value).toBe(5);
-    expect(integerLiteral?.tokenLiteral()).toBe('5');
+describe('Prefix expression', () => {
+  const tests: { input: string; operator: string; integerValue: number }[] = [
+    {
+      input: '!5',
+      operator: '!',
+      integerValue: 5,
+    },
+    {
+      input: '-15',
+      operator: '-',
+      integerValue: 15,
+    },
+  ];
+
+  tests.forEach(({ input, operator, integerValue }) => {
+    const { program, parser } = createProgram(input);
+
+    testParserErrors(parser);
+    testNumberOfStatements(program, 1);
+
+    const statement = program.statements[0] ?? null;
+
+    testExpressionStatement(statement);
+
+    const prefix = isExpressionStatement(statement) ? statement.expression : null;
+    const isPrefix = isPrefixExpression(prefix);
+
+    it('has PrefixExpression and correcto operator', () => {
+      expect(isPrefix).toBe(true);
+      expect(isPrefix && prefix.operator).toBe(operator);
+    });
+
+    testIntegerLiteralExpression(isPrefix ? prefix.right : null, integerValue);
   });
 });
 
@@ -109,6 +139,15 @@ function testExpressionStatement(statement: Statement | null): void {
 function testParserErrors(parser: Parser): void {
   it('results without errors', () => {
     expect(parser.errors.length).toBe(0);
+  });
+}
+
+function testIntegerLiteralExpression(expression: Expression | null, value: number): void {
+  it('has an IntegerLiteral expression with correct value', () => {
+    const isIntegerLiteral = isIntegerLiteralExpression(expression);
+    expect(isIntegerLiteral).toBe(true);
+    expect(isIntegerLiteral && expression.value).toBe(value);
+    expect(expression?.tokenLiteral()).toBe(value.toString());
   });
 }
 
@@ -136,4 +175,8 @@ function isIdentifierExpression(expression: Expression | null): expression is Id
 
 function isIntegerLiteralExpression(expression: Expression | null): expression is IntegerLiteral {
   return expression instanceof IntegerLiteral;
+}
+
+function isPrefixExpression(expression: Expression | null): expression is PrefixExpression {
+  return expression instanceof PrefixExpression;
 }

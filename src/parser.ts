@@ -9,6 +9,7 @@ import {
   ReturnStatement,
   ExpressionStatement,
   IntegerLiteral,
+  PrefixExpression,
 } from './ast';
 
 type PrefixParseFn = () => Expression | null;
@@ -38,6 +39,8 @@ export class Parser {
     this.peekToken = lexer.nextToken();
     this.registerPrefix(TOKEN_TYPE.IDENT, this.parseIdentifier.bind(this));
     this.registerPrefix(TOKEN_TYPE.INT, this.parseIntegerLiteral.bind(this));
+    this.registerPrefix(TOKEN_TYPE.BANG, this.parsePrefixExpression.bind(this));
+    this.registerPrefix(TOKEN_TYPE.MINUS, this.parsePrefixExpression.bind(this));
   }
 
   nextToken(): void {
@@ -126,7 +129,10 @@ export class Parser {
 
   parseExpression(_precedence: Precedence): Expression | null {
     const prefix = this.prefixParseFns[this.curToken.type];
-    if (!prefix) return null;
+    if (!prefix) {
+      this.errors.push(`no prefix parse function found for ${this.curToken.type}`);
+      return null;
+    }
 
     const leftExpression = prefix();
 
@@ -146,6 +152,20 @@ export class Parser {
     }
 
     return new IntegerLiteral(this.curToken, integer);
+  }
+
+  parsePrefixExpression(): PrefixExpression {
+    const operatorToken = this.curToken;
+
+    this.nextToken();
+
+    const prefixExpression = new PrefixExpression(
+      operatorToken,
+      operatorToken.literal,
+      this.parseExpression(PRECEDENCE.PREFIX)!,
+    );
+
+    return prefixExpression;
   }
 
   curTokenIs(type: TokenType): boolean {

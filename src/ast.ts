@@ -111,7 +111,10 @@ export class Identifier implements Expression {
 }
 
 export class IntegerLiteral implements Expression {
-  constructor(public token: Token, public value: number) {}
+  constructor(
+    public token: Token,
+    public value: number,
+  ) {}
 
   tokenLiteral() {
     return this.token.literal;
@@ -121,5 +124,23 @@ export class IntegerLiteral implements Expression {
 
   string() {
     return this.value.toString();
+  }
+}
+
+export class PrefixExpression implements Expression {
+  constructor(
+    public token: Token,
+    public operator: string,
+    public right: Expression,
+  ) {}
+
+  expressionNode() {}
+
+  tokenLiteral() {
+    return this.token.literal;
+  }
+
+  string() {
+    return `(${this.operator}${this.right.string()})`;
   }
 }
