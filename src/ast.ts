@@ -27,7 +27,7 @@ export class Program implements Node {
   }
 
   string() {
-    return this.statements.map((statement) => statement.string()).join(' ');
+    return this.statements.map((statement) => statement.string()).join('');
   }
 
   pushStatement(statement: Statement) {
@@ -142,5 +142,24 @@ export class PrefixExpression implements Expression {
 
   string() {
     return `(${this.operator}${this.right.string()})`;
+  }
+}
+
+export class InfixExpression implements Expression {
+  constructor(
+    public token: Token,
+    public operator: string,
+    public left: Expression,
+    public right: Expression,
+  ) {}
+
+  expressionNode() {}
+
+  tokenLiteral() {
+    return this.token.literal;
+  }
+
+  string() {
+    return `(${this.left.string()} ${this.operator} ${this.right.string()})`;
   }
 }

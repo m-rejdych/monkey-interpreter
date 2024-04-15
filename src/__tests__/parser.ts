@@ -10,6 +10,7 @@ import {
   Expression,
   IntegerLiteral,
   PrefixExpression,
+  InfixExpression,
 } from '../ast';
 
 describe('Let statements', () => {
@@ -115,12 +116,78 @@ describe('Prefix expression', () => {
     const prefix = isExpressionStatement(statement) ? statement.expression : null;
     const isPrefix = isPrefixExpression(prefix);
 
-    it('has PrefixExpression and correcto operator', () => {
+    it('has PrefixExpression', () => {
       expect(isPrefix).toBe(true);
-      expect(isPrefix && prefix.operator).toBe(operator);
     });
 
+    testOperator(prefix, operator);
     testIntegerLiteralExpression(isPrefix ? prefix.right : null, integerValue);
+  });
+});
+
+describe('Infix expression', () => {
+  const tests: { input: string; leftValue: number; operator: string; rightValue: number }[] = [
+    { input: '5 + 5', leftValue: 5, operator: '+', rightValue: 5 },
+    { input: '5 - 5', leftValue: 5, operator: '-', rightValue: 5 },
+    { input: '5 * 5', leftValue: 5, operator: '*', rightValue: 5 },
+    { input: '5 / 5', leftValue: 5, operator: '/', rightValue: 5 },
+    { input: '5 < 5', leftValue: 5, operator: '<', rightValue: 5 },
+    { input: '5 > 5', leftValue: 5, operator: '>', rightValue: 5 },
+    { input: '5 == 5', leftValue: 5, operator: '==', rightValue: 5 },
+    { input: '5 != 5', leftValue: 5, operator: '!=', rightValue: 5 },
+  ];
+
+  tests.forEach(({ input, leftValue, rightValue, operator }) => {
+    const { program, parser } = createProgram(input);
+
+    testParserErrors(parser);
+    testNumberOfStatements(program, 1);
+
+    const statement = program.statements[0] ?? null;
+
+    testExpressionStatement(statement);
+
+    const infix = isExpressionStatement(statement) ? statement.expression : null;
+    const isInfix = isInfixExperssion(infix);
+
+    it('has an InfixExpression', () => {
+      expect(isInfix).toBe(true);
+    });
+
+    const leftInteger = isInfix ? infix.left : null;
+    const rightInteger = isInfix ? infix.right : null;
+
+    testIntegerLiteralExpression(leftInteger, leftValue);
+    testOperator(infix, operator);
+    testIntegerLiteralExpression(rightInteger, rightValue);
+  });
+});
+
+describe('Operator precedence parsing', () => {
+  const tests: { input: string; expected: string }[] = [
+    { input: '-a * b', expected: '((-a) * b)' },
+    { input: '!-a', expected: '(!(-a))' },
+    { input: 'a + b + c', expected: '((a + b) + c)' },
+    { input: 'a + b - c', expected: '((a + b) - c)' },
+    { input: 'a * b * c', expected: '((a * b) * c)' },
+    { input: 'a * b / c', expected: '((a * b) / c)' },
+    { input: 'a + b / c', expected: '(a + (b / c))' },
+    { input: 'a + b * c + d / e - f', expected: '(((a + (b * c)) + (d / e)) - f)' },
+    { input: '3 + 4; -5 * 5', expected: '(3 + 4)((-5) * 5)' },
+    { input: '5 > 4 == 3 < 4', expected: '((5 > 4) == (3 < 4))' },
+    { input: '5 < 4 != 3 > 4', expected: '((5 < 4) != (3 > 4))' },
+    { input: '3 + 4 * 5 == 3 * 1 + 4 * 5', expected: '((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))' },
+    { input: '-a * b', expected: '((-a) * b)' },
+  ];
+
+  tests.forEach(({ input, expected }) => {
+    const { program, parser } = createProgram(input);
+    testParserErrors(parser);
+
+    it('parses correctly according to the precedence', () => {
+      const actual = program.string();
+      expect(actual).toBe(expected);
+    });
   });
 });
 
@@ -157,6 +224,14 @@ function testNumberOfStatements(program: Program, num: number): void {
   });
 }
 
+function testOperator(expression: Expression | null, operator: string): void {
+  it('has correct operator', () => {
+    const hasOperator = expression && 'operator' in expression && !!expression.operator;
+    expect(hasOperator).toBe(true);
+    expect(hasOperator && expression.operator).toBe(operator);
+  });
+}
+
 function createProgram(input: string): { program: Program; parser: Parser } {
   const lexer = new Lexer(input);
   const parser = new Parser(lexer);
@@ -179,4 +254,8 @@ function isIntegerLiteralExpression(expression: Expression | null): expression i
 
 function isPrefixExpression(expression: Expression | null): expression is PrefixExpression {
   return expression instanceof PrefixExpression;
+}
+
+function isInfixExperssion(expression: Expression | null): expression is InfixExpression {
+  return expression instanceof InfixExpression;
 }
