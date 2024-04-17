@@ -93,6 +93,26 @@ export class ExpressionStatement implements Statement {
   }
 }
 
+export class BlockStatement implements Statement {
+  statements: Statement[] = [];
+
+  constructor(public token: Token) {}
+
+  tokenLiteral() {
+    return this.token.literal;
+  }
+
+  string() {
+    return this.statements.map((statement) => statement.string()).join('');
+  }
+
+  statementNode() {}
+
+  pushStatement(statement: Statement): void {
+    this.statements.push(statement);
+  }
+}
+
 export class Identifier implements Expression {
   constructor(
     public token: Token,
@@ -165,7 +185,10 @@ export class InfixExpression implements Expression {
 }
 
 export class BoolExpression implements Expression {
-  constructor(public token: Token, public value: boolean) {}
+  constructor(
+    public token: Token,
+    public value: boolean,
+  ) {}
 
   tokenLiteral() {
     return this.token.literal;
@@ -175,5 +198,24 @@ export class BoolExpression implements Expression {
 
   string() {
     return this.token.literal;
+  }
+}
+
+export class IfExpression implements Expression {
+  constructor(
+    public token: Token,
+    public condition: Expression,
+    public consequence: BlockStatement,
+    public alternative: BlockStatement | null,
+  ) {}
+
+  expressionNode() {}
+
+  tokenLiteral() {
+    return this.token.literal;
+  }
+
+  string() {
+    return `if ${this.condition.string()} ${this.consequence.string()}${this.alternative && ` else ${this.alternative.string()}`}`;
   }
 }

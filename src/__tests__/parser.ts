@@ -12,6 +12,7 @@ import {
   PrefixExpression,
   InfixExpression,
   BoolExpression,
+  IfExpression,
 } from '../ast';
 
 describe('Let statements', () => {
@@ -158,18 +159,7 @@ describe('Infix expression', () => {
     testExpressionStatement(statement);
 
     const infix = isExpressionStatement(statement) ? statement.expression : null;
-    const isInfix = isInfixExperssion(infix);
-
-    it('has an InfixExpression', () => {
-      expect(isInfix).toBe(true);
-    });
-
-    const leftInteger = isInfix ? infix.left : null;
-    const rightInteger = isInfix ? infix.right : null;
-
-    testLiteralExpression(leftInteger, leftValue);
-    testOperator(infix, operator);
-    testLiteralExpression(rightInteger, rightValue);
+    testInfixExpression(infix, leftValue, operator, rightValue);
   });
 });
 
@@ -235,6 +225,85 @@ describe('Bool expression', () => {
   });
 });
 
+describe('If expression', () => {
+  const input = 'if (x < y) { x }';
+
+  const { parser, program } = createProgram(input);
+
+  testParserErrors(parser);
+  testNumberOfStatements(program, 1);
+
+  const statement = program.statements[0] ?? null;
+  testExpressionStatement(statement);
+
+  const ifExpression = isExpressionStatement(statement) ? statement.expression : null;
+  const isIf = isIfExpression(ifExpression);
+  it('has IfExpression', () => {
+    expect(isIf).toBe(true);
+  });
+
+  const condition = isIf ? ifExpression.condition : null;
+  const consequence = isIf ? ifExpression.consequence : null;
+  const alternative = isIf ? ifExpression.alternative : null;
+
+  testInfixExpression(condition, 'x', '<', 'y');
+
+  testNumberOfStatements(consequence, 1);
+  const consequenceExpression = consequence?.statements[0] ?? null;
+  testExpressionStatement(consequenceExpression);
+
+  const consequenceIdentifier = isExpressionStatement(consequenceExpression)
+    ? consequenceExpression.expression
+    : null;
+  testIdentifierExpression(consequenceIdentifier, 'x');
+
+  it('has no alternative block', () => {
+    expect(alternative).toBe(null);
+  });
+});
+
+describe('If else expression', () => {
+  const input = 'if (x < y) { x } else { y }';
+
+  const { parser, program } = createProgram(input);
+
+  testParserErrors(parser);
+  testNumberOfStatements(program, 1);
+
+  const statement = program.statements[0] ?? null;
+  testExpressionStatement(statement);
+
+  const ifExpression = isExpressionStatement(statement) ? statement.expression : null;
+  const isIf = isIfExpression(ifExpression);
+  it('has IfExpression', () => {
+    expect(isIf).toBe(true);
+  });
+
+  const condition = isIf ? ifExpression.condition : null;
+  const consequence = isIf ? ifExpression.consequence : null;
+  const alternative = isIf ? ifExpression.alternative : null;
+
+  testInfixExpression(condition, 'x', '<', 'y');
+
+  testNumberOfStatements(consequence, 1);
+  const consequenceExpression = consequence?.statements[0] ?? null;
+  testExpressionStatement(consequenceExpression);
+
+  const consequenceIdentifier = isExpressionStatement(consequenceExpression)
+    ? consequenceExpression.expression
+    : null;
+  testIdentifierExpression(consequenceIdentifier, 'x');
+
+  testNumberOfStatements(alternative, 1);
+  const alternativeExpression = alternative?.statements[0] ?? null;
+  testExpressionStatement(alternativeExpression);
+
+  const alternativeIdentifier = isExpressionStatement(alternativeExpression)
+    ? alternativeExpression.expression
+    : null;
+  testIdentifierExpression(alternativeIdentifier, 'y');
+});
+
 function testLetStatement(statement: Statement, name: string): void {
   expect(statement.tokenLiteral()).toBe('let');
   expect(statement instanceof LetStatement).toBe(true);
@@ -296,9 +365,32 @@ function testLiteralExpression(expression: Expression | null, expected: unknown)
   }
 }
 
-function testNumberOfStatements(program: Program, num: number): void {
+function testInfixExpression(
+  expression: Expression | null,
+  leftValue: unknown,
+  operator: string,
+  rightValue: unknown,
+): void {
+  const isInfix = isInfixExperssion(expression);
+
+  it('has an InfixExpression', () => {
+    expect(isInfix).toBe(true);
+  });
+
+  const left = isInfix ? expression.left : null;
+  const right = isInfix ? expression.right : null;
+
+  testLiteralExpression(left, leftValue);
+  testOperator(expression, operator);
+  testLiteralExpression(right, rightValue);
+}
+
+function testNumberOfStatements<T extends { statements: Statement[] } | null>(
+  obj: T,
+  num: number,
+): void {
   it('has correct number of statements', () => {
-    expect(program.statements.length).toBe(num);
+    expect(obj && obj.statements.length).toBe(num);
   });
 }
 
@@ -340,4 +432,8 @@ function isInfixExperssion(expression: Expression | null): expression is InfixEx
 
 function isBoolExpression(expression: Expression | null): expression is BoolExpression {
   return expression instanceof BoolExpression;
+}
+
+function isIfExpression(expression: Expression | null): expression is IfExpression {
+  return expression instanceof IfExpression;
 }
