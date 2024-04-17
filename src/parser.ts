@@ -56,6 +56,8 @@ export class Parser {
     this.registerPrefix(TOKEN_TYPE.MINUS, this.parsePrefixExpression.bind(this));
     this.registerPrefix(TOKEN_TYPE.TRUE, this.parseBoolExpression.bind(this));
     this.registerPrefix(TOKEN_TYPE.FALSE, this.parseBoolExpression.bind(this));
+    this.registerPrefix(TOKEN_TYPE.LPAREN, this.parseGroupedExpression.bind(this));
+    this.registerPrefix(TOKEN_TYPE.RPAREN, this.parseGroupedExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.EQ, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.NOT_EQ, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.LT, this.parseInfixExpression.bind(this));
@@ -219,6 +221,18 @@ export class Parser {
 
   parseBoolExpression(): BoolExpression {
     return new BoolExpression(this.curToken, this.curTokenIs(TOKEN_TYPE.TRUE));
+  }
+
+  parseGroupedExpression(): Expression | null {
+    this.nextToken();
+
+    const expression = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
+
+    if (!this.expectPeek(TOKEN_TYPE.RPAREN)) {
+      return null;
+    }
+
+    return expression;
   }
 
   curTokenIs(type: TokenType): boolean {
