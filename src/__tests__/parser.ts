@@ -11,6 +11,7 @@ import {
   IntegerLiteral,
   PrefixExpression,
   InfixExpression,
+  BoolExpression,
 } from '../ast';
 
 describe('Let statements', () => {
@@ -69,12 +70,8 @@ describe('Identifier expression', () => {
   const statement = program.statements[0] ?? null;
   testExpressionStatement(statement);
 
-  it('is has Identifier expression with correct value', () => {
-    const identifier = isExpressionStatement(statement) ? statement.expression : null;
-    const isIdentifier = isIdentifierExpression(identifier);
-    expect(isIdentifier).toBe(true);
-    expect(isIdentifier && identifier.value).toBe('foobar');
-  });
+  const identifier = isExpressionStatement(statement) ? statement.expression : null;
+  testIdentifierExpression(identifier, 'foobar');
 });
 
 describe('Integer literal expression', () => {
@@ -90,20 +87,30 @@ describe('Integer literal expression', () => {
 });
 
 describe('Prefix expression', () => {
-  const tests: { input: string; operator: string; integerValue: number }[] = [
+  const tests: { input: string; operator: string; value: unknown }[] = [
     {
       input: '!5',
       operator: '!',
-      integerValue: 5,
+      value: 5,
     },
     {
       input: '-15',
       operator: '-',
-      integerValue: 15,
+      value: 15,
+    },
+    {
+      input: '!true',
+      operator: '!',
+      value: true,
+    },
+    {
+      input: '!false',
+      operator: '!',
+      value: false,
     },
   ];
 
-  tests.forEach(({ input, operator, integerValue }) => {
+  tests.forEach(({ input, operator, value: integerValue }) => {
     const { program, parser } = createProgram(input);
 
     testParserErrors(parser);
@@ -121,12 +128,12 @@ describe('Prefix expression', () => {
     });
 
     testOperator(prefix, operator);
-    testIntegerLiteralExpression(isPrefix ? prefix.right : null, integerValue);
+    testLiteralExpression(isPrefix ? prefix.right : null, integerValue);
   });
 });
 
 describe('Infix expression', () => {
-  const tests: { input: string; leftValue: number; operator: string; rightValue: number }[] = [
+  const tests: { input: string; leftValue: unknown; operator: string; rightValue: unknown }[] = [
     { input: '5 + 5', leftValue: 5, operator: '+', rightValue: 5 },
     { input: '5 - 5', leftValue: 5, operator: '-', rightValue: 5 },
     { input: '5 * 5', leftValue: 5, operator: '*', rightValue: 5 },
@@ -135,6 +142,9 @@ describe('Infix expression', () => {
     { input: '5 > 5', leftValue: 5, operator: '>', rightValue: 5 },
     { input: '5 == 5', leftValue: 5, operator: '==', rightValue: 5 },
     { input: '5 != 5', leftValue: 5, operator: '!=', rightValue: 5 },
+    { input: 'true == true', leftValue: true, operator: '==', rightValue: true },
+    { input: 'false != true', leftValue: false, operator: '!=', rightValue: true },
+    { input: 'false == false', leftValue: false, operator: '==', rightValue: false },
   ];
 
   tests.forEach(({ input, leftValue, rightValue, operator }) => {
@@ -157,9 +167,9 @@ describe('Infix expression', () => {
     const leftInteger = isInfix ? infix.left : null;
     const rightInteger = isInfix ? infix.right : null;
 
-    testIntegerLiteralExpression(leftInteger, leftValue);
+    testLiteralExpression(leftInteger, leftValue);
     testOperator(infix, operator);
-    testIntegerLiteralExpression(rightInteger, rightValue);
+    testLiteralExpression(rightInteger, rightValue);
   });
 });
 
@@ -178,6 +188,10 @@ describe('Operator precedence parsing', () => {
     { input: '5 < 4 != 3 > 4', expected: '((5 < 4) != (3 > 4))' },
     { input: '3 + 4 * 5 == 3 * 1 + 4 * 5', expected: '((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))' },
     { input: '-a * b', expected: '((-a) * b)' },
+    { input: 'true', expected: 'true' },
+    { input: 'false', expected: 'false' },
+    { input: '3 > 5 == false', expected: '((3 > 5) == false)' },
+    { input: '3 < 5 == true', expected: '((3 < 5) == true)' },
   ];
 
   tests.forEach(({ input, expected }) => {
@@ -188,6 +202,32 @@ describe('Operator precedence parsing', () => {
       const actual = program.string();
       expect(actual).toBe(expected);
     });
+  });
+});
+
+describe('Bool expression', () => {
+  const tests: { input: string; boolValue: boolean }[] = [
+    {
+      input: 'true;',
+      boolValue: true,
+    },
+    {
+      input: 'false;',
+      boolValue: false,
+    },
+  ];
+
+  tests.forEach(({ input, boolValue }) => {
+    const { program, parser } = createProgram(input);
+
+    testParserErrors(parser);
+    testNumberOfStatements(program, 1);
+
+    const statement = program.statements[0] ?? null;
+    testExpressionStatement(statement);
+
+    const bool = isExpressionStatement(statement) ? statement.expression : null;
+    testBoolExperssion(bool, boolValue);
   });
 });
 
@@ -209,6 +249,15 @@ function testParserErrors(parser: Parser): void {
   });
 }
 
+function testIdentifierExpression(expression: Expression | null, value: string): void {
+  it('is has Identifier expression with correct value', () => {
+    const isIdentifier = isIdentifierExpression(expression);
+    expect(isIdentifier).toBe(true);
+    expect(isIdentifier && expression.value).toBe(value);
+    expect(isIdentifier && expression.tokenLiteral()).toBe(value);
+  });
+}
+
 function testIntegerLiteralExpression(expression: Expression | null, value: number): void {
   it('has an IntegerLiteral expression with correct value', () => {
     const isIntegerLiteral = isIntegerLiteralExpression(expression);
@@ -216,6 +265,31 @@ function testIntegerLiteralExpression(expression: Expression | null, value: numb
     expect(isIntegerLiteral && expression.value).toBe(value);
     expect(expression?.tokenLiteral()).toBe(value.toString());
   });
+}
+
+function testBoolExperssion(expression: Expression | null, value: boolean): void {
+  it('has a Bool expression with correct value', () => {
+    const isBool = isBoolExpression(expression);
+    expect(isBool).toBe(true);
+    expect(isBool ? expression.value : null).toBe(value);
+    expect(isBool && `${expression.value}`).toBe(`${value}`);
+  });
+}
+
+function testLiteralExpression(expression: Expression | null, expected: unknown): void {
+  switch (typeof expected) {
+    case 'string':
+      testIdentifierExpression(expression, expected);
+      break;
+    case 'number':
+      testIntegerLiteralExpression(expression, expected);
+      break;
+    case 'boolean':
+      testBoolExperssion(expression, expected);
+      break;
+    default:
+      break;
+  }
 }
 
 function testNumberOfStatements(program: Program, num: number): void {
@@ -258,4 +332,8 @@ function isPrefixExpression(expression: Expression | null): expression is Prefix
 
 function isInfixExperssion(expression: Expression | null): expression is InfixExpression {
   return expression instanceof InfixExpression;
+}
+
+function isBoolExpression(expression: Expression | null): expression is BoolExpression {
+  return expression instanceof BoolExpression;
 }

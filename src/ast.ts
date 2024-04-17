@@ -163,3 +163,17 @@ export class InfixExpression implements Expression {
     return `(${this.left.string()} ${this.operator} ${this.right.string()})`;
   }
 }
+
+export class BoolExpression implements Expression {
+  constructor(public token: Token, public value: boolean) {}
+
+  tokenLiteral() {
+    return this.token.literal;
+  }
+
+  expressionNode() {}
+
+  string() {
+    return this.token.literal;
+  }
+}
