@@ -14,6 +14,7 @@ import {
   InfixExpression,
   BoolExpression,
   IfExpression,
+  FunctionExpression,
 } from './ast';
 
 type PrefixParseFn = () => Expression | null;
@@ -61,6 +62,7 @@ export class Parser {
     this.registerPrefix(TOKEN_TYPE.LPAREN, this.parseGroupedExpression.bind(this));
     this.registerPrefix(TOKEN_TYPE.RPAREN, this.parseGroupedExpression.bind(this));
     this.registerPrefix(TOKEN_TYPE.IF, this.parseIfExpression.bind(this));
+    this.registerPrefix(TOKEN_TYPE.FUNCTION, this.parseFunctionExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.EQ, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.NOT_EQ, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.LT, this.parseInfixExpression.bind(this));
@@ -285,6 +287,47 @@ export class Parser {
     }
 
     return expression;
+  }
+
+  parseFunctionExpression(): FunctionExpression | null {
+    const fnToken = this.curToken;
+
+    if (!this.expectPeek(TOKEN_TYPE.LPAREN)) {
+      return null;
+    }
+
+    const params = this.parseFunctionParameters();
+    if (!params) return null;
+
+    if (!this.expectPeek(TOKEN_TYPE.LBRACE)) {
+      return null;
+    }
+
+    return new FunctionExpression(fnToken, params, this.parseBlockStatement());
+  }
+
+  parseFunctionParameters(): Identifier[] | null {
+    const params: Identifier[] = [];
+
+    this.nextToken();
+
+    if (this.curTokenIs(TOKEN_TYPE.RPAREN)) {
+      return params;
+    }
+
+    params.push(this.parseIdentifier());
+
+    while (this.peekTokenIs(TOKEN_TYPE.COMMA)) {
+      this.nextToken();
+      this.nextToken();
+      params.push(this.parseIdentifier());
+    }
+
+    if (!this.expectPeek(TOKEN_TYPE.RPAREN)) {
+      return null;
+    }
+
+    return params;
   }
 
   curTokenIs(type: TokenType): boolean {

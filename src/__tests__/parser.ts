@@ -6,6 +6,7 @@ import {
   LetStatement,
   ReturnStatement,
   ExpressionStatement,
+  BlockStatement,
   Identifier,
   Expression,
   IntegerLiteral,
@@ -13,6 +14,7 @@ import {
   InfixExpression,
   BoolExpression,
   IfExpression,
+  FunctionExpression,
 } from '../ast';
 
 describe('Let statements', () => {
@@ -248,6 +250,7 @@ describe('If expression', () => {
 
   testInfixExpression(condition, 'x', '<', 'y');
 
+  testBlockStatement(consequence);
   testNumberOfStatements(consequence, 1);
   const consequenceExpression = consequence?.statements[0] ?? null;
   testExpressionStatement(consequenceExpression);
@@ -285,6 +288,7 @@ describe('If else expression', () => {
 
   testInfixExpression(condition, 'x', '<', 'y');
 
+  testBlockStatement(consequence);
   testNumberOfStatements(consequence, 1);
   const consequenceExpression = consequence?.statements[0] ?? null;
   testExpressionStatement(consequenceExpression);
@@ -294,6 +298,7 @@ describe('If else expression', () => {
     : null;
   testIdentifierExpression(consequenceIdentifier, 'x');
 
+  testBlockStatement(alternative);
   testNumberOfStatements(alternative, 1);
   const alternativeExpression = alternative?.statements[0] ?? null;
   testExpressionStatement(alternativeExpression);
@@ -304,6 +309,78 @@ describe('If else expression', () => {
   testIdentifierExpression(alternativeIdentifier, 'y');
 });
 
+describe('Function expression', () => {
+  const input = 'fn(x, y) { x + y }';
+
+  const { program, parser } = createProgram(input);
+
+  testParserErrors(parser);
+  testNumberOfStatements(program, 1);
+
+  const statement = program.statements[0] ?? null;
+  testExpressionStatement(statement);
+
+  const functionExpression = isExpressionStatement(statement) ? statement.expression : null;
+  const isFunction = isFunctionExpression(functionExpression);
+
+  it('has FunctionExpression', () => {
+    expect(isFunction).toBe(true);
+  });
+
+  const params = isFunction ? functionExpression.args : null;
+  expect(params && params.length).toBe(2);
+
+  testIdentifierExpression(params && (params[0] ?? null), 'x');
+  testIdentifierExpression(params && (params[1] ?? null), 'y');
+
+  const body = isFunction ? functionExpression.body : null;
+  testBlockStatement(body);
+  testNumberOfStatements(body, 1);
+
+  const bodyExpression = body?.statements[0] ?? null;
+  testExpressionStatement(bodyExpression);
+
+  const bodyInfixExpression = isExpressionStatement(bodyExpression)
+    ? bodyExpression.expression
+    : null;
+  testInfixExpression(bodyInfixExpression, 'x', '+', 'y');
+});
+
+ describe('Function parameters parsing', () => {
+   const tests: { input: string; expectedParams: string[] }[] = [
+     {
+       input: 'fn() {}',
+       expectedParams: [],
+     },
+     {
+       input: 'fn(x) {}',
+       expectedParams: ['x'],
+     },
+     {
+       input: 'fn(x, y, z) {}',
+       expectedParams: ['x', 'y', 'z'],
+     },
+   ];
+ 
+   tests.forEach(({ input, expectedParams }) => {
+     const { parser, program } = createProgram(input);
+ 
+     testParserErrors(parser);
+ 
+     const statement = program.statements[0] ?? null;
+     const functionExpression = isExpressionStatement(statement) ? statement.expression : null;
+     const args = isFunctionExpression(functionExpression) ? functionExpression.args : null;
+ 
+     it('has correct number of  args', () => {
+       expect(args?.length).toBe(expectedParams.length);
+     });
+ 
+     for (let i = 0; i < expectedParams.length; i++) {
+       testIdentifierExpression(args?.[i] ?? null, expectedParams[i] ?? '');
+     }
+   });
+ });
+
 function testLetStatement(statement: Statement, name: string): void {
   expect(statement.tokenLiteral()).toBe('let');
   expect(statement instanceof LetStatement).toBe(true);
@@ -313,6 +390,12 @@ function testLetStatement(statement: Statement, name: string): void {
 function testExpressionStatement(statement: Statement | null): void {
   it('is an ExpressionStatement', () => {
     expect(isExpressionStatement(statement)).toBe(true);
+  });
+}
+
+function testBlockStatement(statement: Statement | null): void {
+  it('is a BlockStatement', () => {
+    expect(isBlockStatement(statement)).toBe(true);
   });
 }
 
@@ -436,4 +519,12 @@ function isBoolExpression(expression: Expression | null): expression is BoolExpr
 
 function isIfExpression(expression: Expression | null): expression is IfExpression {
   return expression instanceof IfExpression;
+}
+
+function isBlockStatement(statement: Statement | null): statement is BlockStatement {
+  return statement instanceof BlockStatement;
+}
+
+function isFunctionExpression(expression: Expression | null): expression is FunctionExpression {
+  return expression instanceof FunctionExpression;
 }

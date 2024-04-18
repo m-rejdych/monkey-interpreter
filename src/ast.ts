@@ -219,3 +219,21 @@ export class IfExpression implements Expression {
     return `if ${this.condition.string()} ${this.consequence.string()}${this.alternative && ` else ${this.alternative.string()}`}`;
   }
 }
+
+export class FunctionExpression implements Expression {
+  constructor(
+    public token: Token,
+    public args: Identifier[],
+    public body: BlockStatement,
+  ) {}
+
+  tokenLiteral() {
+    return this.token.literal;
+  }
+
+  string() {
+    return `fn (${this.args.map((arg) => arg.string()).join(', ')}) ${this.body.string()}`;
+  }
+
+  expressionNode() {}
+}
