@@ -39,7 +39,6 @@ export class LetStatement implements Statement {
   constructor(
     public token: Token,
     public name: Identifier,
-    // TODO: make value an Expression
     public value: null | Expression,
   ) {}
 
@@ -50,7 +49,6 @@ export class LetStatement implements Statement {
   }
 
   string() {
-    // TODO: Remove null check when expressions are implemented
     return `${this.tokenLiteral()} ${this.name.string()} = ${this.value?.string() ?? ''};`;
   }
 }
@@ -58,7 +56,6 @@ export class LetStatement implements Statement {
 export class ReturnStatement implements Statement {
   constructor(
     public token: Token,
-    // TODO: make value an Expression
     public returnValue: null | Expression,
   ) {}
 
@@ -69,7 +66,6 @@ export class ReturnStatement implements Statement {
   }
 
   string() {
-    // TODO: Remove null check when expressions are implemented
     return `${this.tokenLiteral()} ${this.returnValue?.string() ?? ''};`;
   }
 }
@@ -77,7 +73,6 @@ export class ReturnStatement implements Statement {
 export class ExpressionStatement implements Statement {
   constructor(
     public token: Token,
-    // TODO: make value an Expression
     public expression: null | Expression,
   ) {}
 
@@ -88,7 +83,6 @@ export class ExpressionStatement implements Statement {
   }
 
   string() {
-    // TODO: Remove null check when expressions are implemented
     return this.expression?.string() ?? '';
   }
 }

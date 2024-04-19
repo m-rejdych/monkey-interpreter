@@ -18,49 +18,68 @@ import {
   CallExpression,
 } from '../ast';
 
-describe('Let statements', () => {
-  const input = `
-  let x = 5;
-  let y = 10;
-  let foobar = 838383;
-`;
-  const { program, parser } = createProgram(input);
+describe('Let statement', () => {
+  const tests: { input: string; expectedIdentifier: string; expectedValue: unknown }[] = [
+    {
+      input: 'let x = 5;',
+      expectedIdentifier: 'x',
+      expectedValue: 5,
+    },
+    {
+      input: 'let y = true;',
+      expectedIdentifier: 'y',
+      expectedValue: true,
+    },
+    {
+      input: 'let foobar = y;',
+      expectedIdentifier: 'foobar',
+      expectedValue: 'y',
+    },
+  ];
 
-  testParserErrors(parser);
-  testNumberOfStatements(program, 3);
+  tests.forEach(({ input, expectedIdentifier, expectedValue }) => {
+    const { program, parser } = createProgram(input);
 
-  it('has correct number of statements', () => {
-    expect(program.statements.length).toBe(3);
-  });
+    testParserErrors(parser);
+    testNumberOfStatements(program, 1);
 
-  it('parses let statement', () => {
-    const expectedIdentifiers = ['x', 'y', 'foobar'];
+    const statement = program.statements[0] ?? null;
 
-    for (let i = 0; i < expectedIdentifiers.length; i++) {
-      const statement = program.statements[i]!;
-      const expectedIdentifier = expectedIdentifiers[i]!;
+    testLetStatement(statement, expectedIdentifier);
 
-      testLetStatement(statement, expectedIdentifier);
-    }
+    testLiteralExpression(isLetStatement(statement) ? statement.value : null, expectedValue);
   });
 });
 
-describe('Return statements', () => {
-  const input = `
-return 5;
-return 10;
-return 993332;
-`;
-  const { parser, program } = createProgram(input);
+describe('Return statement', () => {
+  const tests: { input: string; expectedValue: unknown }[] = [
+    {
+      input: 'return 5;',
+      expectedValue: 5,
+    },
+    {
+      input: 'return true',
+      expectedValue: true,
+    },
+    {
+      input: 'return x;',
+      expectedValue: 'x',
+    },
+  ];
 
-  testParserErrors(parser);
-  testNumberOfStatements(program, 3);
+  tests.forEach(({ input, expectedValue }) => {
+    const { parser, program } = createProgram(input);
 
-  it('it parses return correctly', () => {
-    program.statements.forEach((statement) => {
-      expect(statement instanceof ReturnStatement).toBe(true);
-      expect(statement.tokenLiteral()).toBe('return');
-    });
+    testParserErrors(parser);
+    testNumberOfStatements(program, 1);
+
+    const statement = program.statements[0] ?? null;
+
+    testReturnStatement(statement);
+    testLiteralExpression(
+      isReturnStatement(statement) ? statement.returnValue : null,
+      expectedValue,
+    );
   });
 });
 
@@ -190,7 +209,10 @@ describe('Operator precedence parsing', () => {
     { input: '-(5 + 5)', expected: '(-(5 + 5))' },
     { input: '!(true == true)', expected: '(!(true == true))' },
     { input: 'a + add(b * c) + d', expected: '((a + add((b * c))) + d)' },
-    { input: 'add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))', expected: 'add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))' },
+    {
+      input: 'add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))',
+      expected: 'add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))',
+    },
     { input: 'add(a + b + c * d / f + g)', expected: 'add((((a + b) + ((c * d) / f)) + g))' },
   ];
 
@@ -415,10 +437,19 @@ describe('Call expression', () => {
   testInfixExpression(args?.[2] ?? null, 3, '+', 5);
 });
 
-function testLetStatement(statement: Statement, name: string): void {
-  expect(statement.tokenLiteral()).toBe('let');
-  expect(statement instanceof LetStatement).toBe(true);
-  expect((statement as LetStatement).name.value).toBe(name);
+function testLetStatement(statement: Statement | null, name: string): void {
+  it('parses let statement', () => {
+    expect(statement?.tokenLiteral()).toBe('let');
+    expect(isLetStatement(statement)).toBe(true);
+    expect((statement as LetStatement).name.value).toBe(name);
+  });
+}
+
+function testReturnStatement(statement: Statement | null): void {
+  it('parses return correctly', () => {
+    expect(statement?.tokenLiteral()).toBe('return');
+    expect(isReturnStatement(statement)).toBe(true);
+  });
 }
 
 function testExpressionStatement(statement: Statement | null): void {
@@ -531,6 +562,14 @@ function createProgram(input: string): { program: Program; parser: Parser } {
   const program = parser.parseProgram();
 
   return { parser, program };
+}
+
+function isLetStatement(statement: Statement | null): statement is LetStatement {
+  return statement instanceof LetStatement;
+}
+
+function isReturnStatement(statement: Statement | null): statement is ReturnStatement {
+  return statement instanceof ReturnStatement;
 }
 
 function isExpressionStatement(statement: Statement | null): statement is ExpressionStatement {

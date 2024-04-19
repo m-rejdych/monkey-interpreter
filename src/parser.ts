@@ -118,33 +118,32 @@ export class Parser {
 
     const name = new Identifier(this.curToken, this.curToken.literal);
 
-    // TODO: make value an Expression
-    const letStatement = new LetStatement(letToken, name, null);
-
     if (!this.expectPeek(TOKEN_TYPE.ASSIGN)) {
       return null;
     }
 
-    // TODO: Handle expression
-    while (!this.curTokenIs(TOKEN_TYPE.SEMICOLON)) {
+    this.nextToken();
+    const value = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
+
+    if (this.peekTokenIs(TOKEN_TYPE.SEMICOLON)) {
       this.nextToken();
     }
 
-    return letStatement;
+    return new LetStatement(letToken, name, value);
   }
 
   parseReturnStatement(): ReturnStatement {
-    // TODO: make value an Expression
-    const returnStatement = new ReturnStatement(this.curToken, null);
+    const returnToken = this.curToken;
 
     this.nextToken();
 
-    // TODO: Handle expression
-    while (!this.curTokenIs(TOKEN_TYPE.SEMICOLON)) {
+    const returnValue = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
+
+    if (this.peekTokenIs(TOKEN_TYPE.SEMICOLON)) {
       this.nextToken();
     }
 
-    return returnStatement;
+    return new ReturnStatement(returnToken, returnValue);
   }
 
   parseExpressionStatement(): ExpressionStatement {
