@@ -15,6 +15,7 @@ import {
   BoolExpression,
   IfExpression,
   FunctionExpression,
+  CallExpression,
 } from '../ast';
 
 describe('Let statements', () => {
@@ -188,6 +189,9 @@ describe('Operator precedence parsing', () => {
     { input: '2 / (5 + 5)', expected: '(2 / (5 + 5))' },
     { input: '-(5 + 5)', expected: '(-(5 + 5))' },
     { input: '!(true == true)', expected: '(!(true == true))' },
+    { input: 'a + add(b * c) + d', expected: '((a + add((b * c))) + d)' },
+    { input: 'add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))', expected: 'add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))' },
+    { input: 'add(a + b + c * d / f + g)', expected: 'add((((a + b) + ((c * d) / f)) + g))' },
   ];
 
   tests.forEach(({ input, expected }) => {
@@ -327,9 +331,9 @@ describe('Function expression', () => {
     expect(isFunction).toBe(true);
   });
 
-  const params = isFunction ? functionExpression.args : null;
-  expect(params && params.length).toBe(2);
+  testNumberOfArgs(isFunction ? functionExpression : null, 2);
 
+  const params = isFunction ? functionExpression.args : null;
   testIdentifierExpression(params && (params[0] ?? null), 'x');
   testIdentifierExpression(params && (params[1] ?? null), 'y');
 
@@ -346,40 +350,70 @@ describe('Function expression', () => {
   testInfixExpression(bodyInfixExpression, 'x', '+', 'y');
 });
 
- describe('Function parameters parsing', () => {
-   const tests: { input: string; expectedParams: string[] }[] = [
-     {
-       input: 'fn() {}',
-       expectedParams: [],
-     },
-     {
-       input: 'fn(x) {}',
-       expectedParams: ['x'],
-     },
-     {
-       input: 'fn(x, y, z) {}',
-       expectedParams: ['x', 'y', 'z'],
-     },
-   ];
- 
-   tests.forEach(({ input, expectedParams }) => {
-     const { parser, program } = createProgram(input);
- 
-     testParserErrors(parser);
- 
-     const statement = program.statements[0] ?? null;
-     const functionExpression = isExpressionStatement(statement) ? statement.expression : null;
-     const args = isFunctionExpression(functionExpression) ? functionExpression.args : null;
- 
-     it('has correct number of  args', () => {
-       expect(args?.length).toBe(expectedParams.length);
-     });
- 
-     for (let i = 0; i < expectedParams.length; i++) {
-       testIdentifierExpression(args?.[i] ?? null, expectedParams[i] ?? '');
-     }
-   });
- });
+describe('Function parameters parsing', () => {
+  const tests: { input: string; expectedParams: string[] }[] = [
+    {
+      input: 'fn() {}',
+      expectedParams: [],
+    },
+    {
+      input: 'fn(x) {}',
+      expectedParams: ['x'],
+    },
+    {
+      input: 'fn(x, y, z) {}',
+      expectedParams: ['x', 'y', 'z'],
+    },
+  ];
+
+  tests.forEach(({ input, expectedParams }) => {
+    const { parser, program } = createProgram(input);
+
+    testParserErrors(parser);
+
+    const statement = program.statements[0] ?? null;
+    const functionExpression = isExpressionStatement(statement) ? statement.expression : null;
+    const args = isFunctionExpression(functionExpression) ? functionExpression.args : null;
+
+    testNumberOfArgs(
+      isFunctionExpression(functionExpression) ? functionExpression : null,
+      expectedParams.length,
+    );
+
+    for (let i = 0; i < expectedParams.length; i++) {
+      testIdentifierExpression(args?.[i] ?? null, expectedParams[i] ?? '');
+    }
+  });
+});
+
+describe('Call expression', () => {
+  const input = 'add(3, 2 * 5, 3 + 5)';
+
+  const { parser, program } = createProgram(input);
+
+  testParserErrors(parser);
+  testNumberOfStatements(program, 1);
+
+  const statement = program.statements[0] ?? null;
+  testExpressionStatement(statement);
+
+  const callExpression = isExpressionStatement(statement) ? statement.expression : null;
+  const isCall = isCallExpression(callExpression);
+
+  it('is a call expression', () => {
+    expect(isCall).toBe(true);
+  });
+
+  const callFunction = isCall ? callExpression.func : null;
+
+  testIdentifierExpression(callFunction, 'add');
+  testNumberOfArgs(isCall ? callExpression : null, 3);
+
+  const args = isCall ? callExpression.args : null;
+  testLiteralExpression(args?.[0] ?? null, 3);
+  testInfixExpression(args?.[1] ?? null, 2, '*', 5);
+  testInfixExpression(args?.[2] ?? null, 3, '+', 5);
+});
 
 function testLetStatement(statement: Statement, name: string): void {
   expect(statement.tokenLiteral()).toBe('let');
@@ -406,7 +440,7 @@ function testParserErrors(parser: Parser): void {
 }
 
 function testIdentifierExpression(expression: Expression | null, value: string): void {
-  it('is has Identifier expression with correct value', () => {
+  it('has Identifier expression with correct value', () => {
     const isIdentifier = isIdentifierExpression(expression);
     expect(isIdentifier).toBe(true);
     expect(isIdentifier && expression.value).toBe(value);
@@ -477,6 +511,12 @@ function testNumberOfStatements<T extends { statements: Statement[] } | null>(
   });
 }
 
+function testNumberOfArgs<T extends { args: Expression[] } | null>(func: T, num: number): void {
+  it('has correct number of args', () => {
+    expect(func && func.args.length).toBe(num);
+  });
+}
+
 function testOperator(expression: Expression | null, operator: string): void {
   it('has correct operator', () => {
     const hasOperator = expression && 'operator' in expression && !!expression.operator;
@@ -527,4 +567,8 @@ function isBlockStatement(statement: Statement | null): statement is BlockStatem
 
 function isFunctionExpression(expression: Expression | null): expression is FunctionExpression {
   return expression instanceof FunctionExpression;
+}
+
+function isCallExpression(expression: Expression | null): expression is CallExpression {
+  return expression instanceof CallExpression;
 }

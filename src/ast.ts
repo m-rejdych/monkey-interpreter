@@ -237,3 +237,21 @@ export class FunctionExpression implements Expression {
 
   expressionNode() {}
 }
+
+export class CallExpression implements Expression {
+  constructor(
+    public token: Token,
+    public func: Expression,
+    public args: Expression[],
+  ) {}
+
+  tokenLiteral() {
+    return this.token.literal;
+  }
+
+  string() {
+    return `${this.func.string()}(${this.args.map((arg) => arg.string()).join(', ')})`;
+  }
+
+  expressionNode() {}
+}

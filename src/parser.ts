@@ -15,10 +15,11 @@ import {
   BoolExpression,
   IfExpression,
   FunctionExpression,
+  CallExpression,
 } from './ast';
 
 type PrefixParseFn = () => Expression | null;
-type InfixParseFn = (expression: Expression) => Expression;
+type InfixParseFn = (expression: Expression) => Expression | null;
 
 const PRECEDENCE_TYPE = {
   LOWEST: 0,
@@ -41,6 +42,7 @@ const PRECEDENCES: Partial<Record<TokenType, PrecedenceType>> = {
   [TOKEN_TYPE.MINUS]: PRECEDENCE_TYPE.SUM,
   [TOKEN_TYPE.SLASH]: PRECEDENCE_TYPE.PRODUCT,
   [TOKEN_TYPE.ASTERISK]: PRECEDENCE_TYPE.PRODUCT,
+  [TOKEN_TYPE.LPAREN]: PRECEDENCE_TYPE.CALL,
 };
 
 export class Parser {
@@ -71,6 +73,7 @@ export class Parser {
     this.registerInfix(TOKEN_TYPE.MINUS, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.SLASH, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.ASTERISK, this.parseInfixExpression.bind(this));
+    this.registerInfix(TOKEN_TYPE.LPAREN, this.parseCallExpression.bind(this));
   }
 
   nextToken(): void {
@@ -188,6 +191,7 @@ export class Parser {
 
       this.nextToken();
 
+      if (!leftExpression) return null;
       leftExpression = infix(leftExpression);
     }
 
@@ -328,6 +332,44 @@ export class Parser {
     }
 
     return params;
+  }
+
+  parseCallExpression(func: Expression): CallExpression | null {
+    const functionToken = this.curToken;
+    const args = this.parseCallArguments();
+    if (!args) return null;
+
+    return new CallExpression(functionToken, func, args);
+  }
+
+  parseCallArguments(): Expression[] | null {
+    const args: Expression[] = [];
+
+    this.nextToken();
+
+    if (this.curTokenIs(TOKEN_TYPE.RPAREN)) {
+      return args;
+    }
+
+    const expression = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
+    if (!expression) return null;
+
+    args.push(expression);
+
+    while (this.peekTokenIs(TOKEN_TYPE.COMMA)) {
+      this.nextToken();
+      this.nextToken();
+      const nextExpression = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
+      if (!nextExpression) return null;
+
+      args.push(nextExpression);
+    }
+
+    if (!this.expectPeek(TOKEN_TYPE.RPAREN)) {
+      return null;
+    }
+
+    return args;
   }
 
   curTokenIs(type: TokenType): boolean {
