@@ -1,11 +1,23 @@
 import readline from 'readline';
-import util from 'util';
 import type { Readable, Writable } from 'stream';
 
 import { Lexer } from './lexer';
-import { TOKEN_TYPE } from './token';
+import { Parser } from './parser';
 
 const PROMPT = '>> ' as const;
+
+const MONKEY_FACE = `            __,__
+   .--.  .-"     "-.  .--.
+  / .. \/  .-. .-.  \/ .. \
+ | |  '|  /   Y   \  |'  | |
+ | \   \  \ 0 | 0 /  /   / |
+  \ '- ,\.-"""""""-./, -' /
+   ''-' /_   ^ ^   _\ '-''
+       |  \._   _./  |
+       \   \ '~' /   /
+        '._ '-=-' _.'
+           '-----'
+` as const;
 
 export class Repl {
   constructor(
@@ -20,15 +32,28 @@ export class Repl {
 
     readInterface.on('line', (line) => {
       const lexer = new Lexer(line);
+      const parser = new Parser(lexer);
+      const program = parser.parseProgram();
 
-      while (true) {
-        const token = lexer.nextToken();
-        this.output.write(`${util.format(token)}\n`);
-        if (token.type === TOKEN_TYPE.EOF) {
-          this.output.write(PROMPT);
-          break;
-        }
+      if (parser.errors.length) {
+        this.printParserErrors(parser.errors);
+        return;
       }
+
+      this.output.write(program.string());
+      this.output.write('\n');
+      this.output.write(PROMPT);
+    });
+  }
+
+  printParserErrors(errors: string[]): void {
+    this.output.write(MONKEY_FACE);
+    this.output.write('Whoops! We ran into some monkey business here!\n');
+    this.output.write('parser errors:\n');
+    errors.forEach((error) => {
+      this.output.write(error);
+      this.output.write('\n');
+      this.output.write(PROMPT);
     });
   }
 }
