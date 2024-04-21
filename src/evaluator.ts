@@ -6,6 +6,7 @@ import {
   Statement,
   ExpressionStatement,
   PrefixExpression,
+  InfixExpression,
 } from './ast';
 import { OBJECT_TYPE, Obj, Integer, Bool, Null } from './object';
 
@@ -25,9 +26,17 @@ export function evl(node: Node | null): Obj {
       return new Integer((node as IntegerLiteral).value);
     case BoolExpression:
       return nativeBoolToBoolObject((node as BoolExpression).value);
-    case PrefixExpression:
-      const right = evl((node as PrefixExpression).right);
+    case PrefixExpression: {
+      const nd = node as PrefixExpression;
+      const right = evl(nd.right);
       return evlPrefixExpression((node as PrefixExpression).operator, right);
+    }
+    case InfixExpression: {
+      const nd = node as InfixExpression;
+      const left = evl(nd.left);
+      const right = evl(nd.right);
+      return evlInfixExpression(left, nd.operator, right);
+    }
     default:
       return NULL;
   }
@@ -49,6 +58,47 @@ function evlPrefixExpression(operator: string, right: Obj): Obj {
       return evlBangOperatorExpression(right);
     case '-':
       return evlMinusPrefixOperatorExpression(right);
+    default:
+      return NULL;
+  }
+}
+
+function evlInfixExpression(left: Obj, operator: string, right: Obj): Obj {
+  if (left.type() === OBJECT_TYPE.INTEGER_OBJ && right.type() === OBJECT_TYPE.INTEGER_OBJ) {
+    return evlIntegerInfixExpression(left, operator, right);
+  }
+
+  switch (operator) {
+    case '==':
+      return nativeBoolToBoolObject(left === right);
+    case '!=':
+      return nativeBoolToBoolObject(left !== right);
+    default:
+      return NULL;
+  }
+}
+
+function evlIntegerInfixExpression(left: Obj, operator: string, right: Obj): Obj {
+  const leftValue = (left as Integer).value;
+  const rightValue = (right as Integer).value;
+
+  switch (operator) {
+    case '+':
+      return new Integer(leftValue + rightValue);
+    case '-':
+      return new Integer(leftValue - rightValue);
+    case '/':
+      return new Integer(leftValue / rightValue);
+    case '*':
+      return new Integer(leftValue * rightValue);
+    case '<':
+      return nativeBoolToBoolObject(leftValue < rightValue);
+    case '>':
+      return nativeBoolToBoolObject(leftValue > rightValue);
+    case '==':
+      return nativeBoolToBoolObject(leftValue === rightValue);
+    case '!=':
+      return nativeBoolToBoolObject(leftValue !== rightValue);
     default:
       return NULL;
   }
