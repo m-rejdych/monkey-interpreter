@@ -1,6 +1,7 @@
 const OBJECT_TYPE = {
   INTEGER_OBJ: 'INTEGER',
   BOOL_OBJ: 'BOOL',
+  NULL_OBJ: 'NULL',
 } as const;
 
 type ObjectType = typeof OBJECT_TYPE[keyof typeof OBJECT_TYPE];
@@ -31,5 +32,17 @@ export class Bool implements Object {
 
   type() {
     return OBJECT_TYPE.BOOL_OBJ;
+  }
+}
+
+export class Null implements Object {
+  constructor() {}
+
+  type() {
+    return OBJECT_TYPE.NULL_OBJ;
+  }
+
+  inspect() {
+    return 'null';
   }
 }
