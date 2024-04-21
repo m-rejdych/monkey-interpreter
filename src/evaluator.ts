@@ -10,9 +10,10 @@ import { Obj, Integer, Bool, Null } from './object';
 
 const TRUE = new Bool(true);
 const FALSE = new Bool(false);
+const NULL = new Null();
 
 export function evl(node: Node | null): Obj {
-  if (!node) return new Null();
+  if (!node) return NULL;
 
   switch (Object.getPrototypeOf(node).constructor) {
     case Program:
@@ -24,7 +25,7 @@ export function evl(node: Node | null): Obj {
     case BoolExpression:
       return nativeBoolToBoolObject((node as BoolExpression).value);
     default:
-      return new Null();
+      return NULL;
   }
 }
 
