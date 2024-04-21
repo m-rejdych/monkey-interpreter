@@ -12,6 +12,14 @@ describe('Evaluate integer expression', () => {
       input: '10',
       expected: 10,
     },
+    {
+      input: '-5',
+      expected: -5,
+    },
+    {
+      input: '-10',
+      expected: -10,
+    },
   ];
 
   tests.forEach(({ input, expected }) => {
@@ -36,6 +44,40 @@ describe('Evaluate bool expression', () => {
     const evaluated = runTestEval(input);
     testBoolObject(evaluated, expected);
   });
+});
+
+describe('Bang operator', () => {
+  const tests: { input: string; expected: boolean }[] = [
+    {
+      input: '!true',
+      expected: false,
+    },
+    {
+      input: '!false',
+      expected: true,
+    },
+    {
+      input: '!5',
+      expected: false,
+    },
+    {
+      input: '!!true',
+      expected: true,
+    },
+    {
+      input: '!!false',
+      expected: false,
+    },
+    {
+      input: '!!5',
+      expected: true,
+    },
+  ];
+
+  tests.forEach(({ input, expected }) => {
+    const evaluated = runTestEval(input);
+    testBoolObject(evaluated, expected);
+  })
 });
 
 function runTestEval(input: string): Obj {

@@ -5,8 +5,9 @@ import {
   BoolExpression,
   Statement,
   ExpressionStatement,
+  PrefixExpression,
 } from './ast';
-import { Obj, Integer, Bool, Null } from './object';
+import { OBJECT_TYPE, Obj, Integer, Bool, Null } from './object';
 
 const TRUE = new Bool(true);
 const FALSE = new Bool(false);
@@ -24,6 +25,9 @@ export function evl(node: Node | null): Obj {
       return new Integer((node as IntegerLiteral).value);
     case BoolExpression:
       return nativeBoolToBoolObject((node as BoolExpression).value);
+    case PrefixExpression:
+      const right = evl((node as PrefixExpression).right);
+      return evlPrefixExpression((node as PrefixExpression).operator, right);
     default:
       return NULL;
   }
@@ -37,6 +41,38 @@ function evlStatements(statements: Statement[]): Obj {
   });
 
   return result;
+}
+
+function evlPrefixExpression(operator: string, right: Obj): Obj {
+  switch (operator) {
+    case '!':
+      return evlBangOperatorExpression(right);
+    case '-':
+      return evlMinusPrefixOperatorExpression(right);
+    default:
+      return NULL;
+  }
+}
+
+function evlBangOperatorExpression(right: Obj): Obj {
+  switch (right) {
+    case TRUE:
+      return FALSE;
+    case FALSE:
+      return TRUE;
+    case NULL:
+      return TRUE;
+    default:
+      return FALSE;
+  }
+}
+
+function evlMinusPrefixOperatorExpression(right: Obj): Obj {
+  if (right.type() !== OBJECT_TYPE.INTEGER_OBJ) {
+    return NULL;
+  }
+
+  return new Integer(-(right as Integer).value);
 }
 
 function nativeBoolToBoolObject(input: boolean): Bool {
