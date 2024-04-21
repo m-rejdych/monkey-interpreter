@@ -7,6 +7,8 @@ import {
   ExpressionStatement,
   PrefixExpression,
   InfixExpression,
+  IfExpression,
+  BlockStatement,
 } from './ast';
 import { OBJECT_TYPE, Obj, Integer, Bool, Null } from './object';
 
@@ -37,6 +39,10 @@ export function evl(node: Node | null): Obj {
       const right = evl(nd.right);
       return evlInfixExpression(left, nd.operator, right);
     }
+    case IfExpression:
+      return evlIfExpression(node as IfExpression);
+    case BlockStatement:
+      return evlStatements((node as BlockStatement).statements);
     default:
       return NULL;
   }
@@ -125,6 +131,20 @@ function evlMinusPrefixOperatorExpression(right: Obj): Obj {
   return new Integer(-(right as Integer).value);
 }
 
+function evlIfExpression({ condition, consequence, alternative }: IfExpression): Obj {
+  const evlCondition = evl(condition);
+
+  if (isTruthy(evlCondition)) {
+    return evl(consequence);
+  }
+
+  return alternative ? evl(alternative) : NULL;
+}
+
 function nativeBoolToBoolObject(input: boolean): Bool {
   return input ? TRUE : FALSE;
+}
+
+function isTruthy(obj: Obj): boolean {
+  return obj !== FALSE && obj !== NULL;
 }

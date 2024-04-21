@@ -1,4 +1,4 @@
-import { Obj, Integer, Bool } from '../object';
+import { Obj, Integer, Bool, Null } from '../object';
 import { evl } from '../evaluator';
 import { createProgram } from '../util/program';
 
@@ -185,7 +185,50 @@ describe('Bang operator', () => {
   tests.forEach(({ input, expected }) => {
     const evaluated = runTestEval(input);
     testBoolObject(evaluated, expected);
-  })
+  });
+});
+
+describe('If else expressions', () => {
+  const tests: { input: string; expected: unknown }[] = [
+    {
+      input: 'if (true) { 10 }',
+      expected: 10,
+    },
+    {
+      input: 'if (false) { 10 }',
+      expected: null,
+    },
+    {
+      input: 'if (1) { 10 }',
+      expected: 10,
+    },
+    {
+      input: 'if (1 < 2) { 10 }',
+      expected: 10,
+    },
+    {
+      input: 'if (1 > 2) { 10 }',
+      expected: null,
+    },
+    {
+      input: 'if (1 > 2) { 10 } else { 20 }',
+      expected: 20,
+    },
+    {
+      input: 'if (1 < 2) { 10 } else { 20 }',
+      expected: 10,
+    },
+  ];
+
+  tests.forEach(({ input, expected }) => {
+    const evaluated = runTestEval(input);
+
+    if (typeof expected === 'number') {
+      testIntegerObject(evaluated, expected);
+    } else {
+      testNullObject(evaluated);
+    }
+  });
 });
 
 function runTestEval(input: string): Obj {
@@ -209,12 +252,19 @@ function testIntegerObject(obj: Obj, value: number): void {
 function testBoolObject(obj: Obj, value: boolean): void {
   const isBool = isBoolObject(obj);
 
-  it('is instance of a  bool', () => {
+  it('is instance of a bool', () => {
     expect(isBool).toBe(true);
   });
 
   it('has correct value', () => {
     expect(isBool && obj.value).toBe(value);
+  });
+}
+
+function testNullObject(obj: Obj): void {
+  it('is instance of a null', () => {
+    const isNull = isNullObject(obj);
+    expect(isNull).toBe(true);
   });
 }
 
@@ -224,4 +274,8 @@ function isIntegerObject(obj: Obj): obj is Integer {
 
 function isBoolObject(obj: Obj): obj is Bool {
   return obj instanceof Bool;
+}
+
+function isNullObject(obj: Obj): obj is Null {
+  return obj instanceof Null;
 }
