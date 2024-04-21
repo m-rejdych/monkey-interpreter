@@ -1,17 +1,17 @@
-const OBJECT_TYPE = {
+export const OBJECT_TYPE = {
   INTEGER_OBJ: 'INTEGER',
   BOOL_OBJ: 'BOOL',
   NULL_OBJ: 'NULL',
 } as const;
 
-type ObjectType = typeof OBJECT_TYPE[keyof typeof OBJECT_TYPE];
+type ObjType = typeof OBJECT_TYPE[keyof typeof OBJECT_TYPE];
 
-interface Object {
-  type: () => ObjectType;
+export interface Obj {
+  type: () => ObjType;
   inspect: () => string;
 }
 
-export class Integer implements Object {
+export class Integer implements Obj {
   constructor(public value: number) {}
 
   inspect() {
@@ -23,7 +23,7 @@ export class Integer implements Object {
   }
 }
 
-export class Bool implements Object {
+export class Bool implements Obj {
   constructor(public value: boolean) {}
 
   inspect() {
@@ -35,7 +35,7 @@ export class Bool implements Object {
   }
 }
 
-export class Null implements Object {
+export class Null implements Obj {
   constructor() {}
 
   type() {

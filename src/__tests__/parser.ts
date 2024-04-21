@@ -1,7 +1,5 @@
 import { Parser } from '../parser';
-import { Lexer } from '../lexer';
 import {
-  Program,
   Statement,
   LetStatement,
   ReturnStatement,
@@ -17,6 +15,7 @@ import {
   FunctionExpression,
   CallExpression,
 } from '../ast';
+import { createProgram } from '../util/program';
 
 describe('Let statement', () => {
   const tests: { input: string; expectedIdentifier: string; expectedValue: unknown }[] = [
@@ -556,13 +555,6 @@ function testOperator(expression: Expression | null, operator: string): void {
   });
 }
 
-function createProgram(input: string): { program: Program; parser: Parser } {
-  const lexer = new Lexer(input);
-  const parser = new Parser(lexer);
-  const program = parser.parseProgram();
-
-  return { parser, program };
-}
 
 function isLetStatement(statement: Statement | null): statement is LetStatement {
   return statement instanceof LetStatement;

@@ -1,6 +1,6 @@
 import { Token } from './token';
 
-interface Node {
+export interface Node {
   tokenLiteral: () => string;
   string: () => string;
 }
