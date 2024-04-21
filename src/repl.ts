@@ -3,6 +3,7 @@ import type { Readable, Writable } from 'stream';
 
 import { Lexer } from './lexer';
 import { Parser } from './parser';
+import { evl } from './evaluator';
 
 const PROMPT = '>> ' as const;
 
@@ -40,7 +41,7 @@ export class Repl {
         return;
       }
 
-      this.output.write(program.string());
+      this.output.write(evl(program).inspect());
       this.output.write('\n');
       this.output.write(PROMPT);
     });
