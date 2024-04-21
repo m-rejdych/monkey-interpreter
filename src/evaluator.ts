@@ -1,5 +1,15 @@
-import { Node, Program, IntegerLiteral, BoolExpression, Statement, ExpressionStatement } from './ast';
+import {
+  Node,
+  Program,
+  IntegerLiteral,
+  BoolExpression,
+  Statement,
+  ExpressionStatement,
+} from './ast';
 import { Obj, Integer, Bool, Null } from './object';
+
+const TRUE = new Bool(true);
+const FALSE = new Bool(false);
 
 export function evl(node: Node | null): Obj {
   if (!node) return new Null();
@@ -12,7 +22,7 @@ export function evl(node: Node | null): Obj {
     case IntegerLiteral:
       return new Integer((node as IntegerLiteral).value);
     case BoolExpression:
-      return new Bool((node as BoolExpression).value);
+      return nativeBoolToBoolObject((node as BoolExpression).value);
     default:
       return new Null();
   }
@@ -26,4 +36,8 @@ function evlStatements(statements: Statement[]): Obj {
   });
 
   return result;
+}
+
+function nativeBoolToBoolObject(input: boolean): Bool {
+  return input ? TRUE : FALSE;
 }

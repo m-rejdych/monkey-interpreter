@@ -1,4 +1,4 @@
-import { Obj, Integer } from '../object';
+import { Obj, Integer, Bool } from '../object';
 import { evl } from '../evaluator';
 import { createProgram } from '../util/program';
 
@@ -20,6 +20,24 @@ describe('Evaluate integer expression', () => {
   });
 });
 
+describe('Evaluate bool expression', () => {
+  const tests: { input: string; expected: boolean }[] = [
+    {
+      input: 'true',
+      expected: true,
+    },
+    {
+      input: 'false',
+      expected: false,
+    },
+  ];
+
+  tests.forEach(({ input, expected }) => {
+    const evaluated = runTestEval(input);
+    testBoolObject(evaluated, expected);
+  });
+});
+
 function runTestEval(input: string): Obj {
   const { program } = createProgram(input);
 
@@ -27,13 +45,33 @@ function runTestEval(input: string): Obj {
 }
 
 function testIntegerObject(obj: Obj, value: number): void {
-  it('is integer and has correct value', () => {
-    const isInteger = isIntegerObject(obj);
+  const isInteger = isIntegerObject(obj);
+
+  it('is instance of an integer', () => {
     expect(isInteger).toBe(true);
+  });
+
+  it('has correct value', () => {
     expect(isInteger && obj.value).toBe(value);
+  });
+}
+
+function testBoolObject(obj: Obj, value: boolean): void {
+  const isBool = isBoolObject(obj);
+
+  it('is instance of a  bool', () => {
+    expect(isBool).toBe(true);
+  });
+
+  it('has correct value', () => {
+    expect(isBool && obj.value).toBe(value);
   });
 }
 
 function isIntegerObject(obj: Obj): obj is Integer {
   return obj instanceof Integer;
+}
+
+function isBoolObject(obj: Obj): obj is Bool {
+  return obj instanceof Bool;
 }
