@@ -1,5 +1,6 @@
 const OBJECT_TYPE = {
   INTEGER_OBJ: 'INTEGER',
+  BOOL_OBJ: 'BOOL',
 } as const;
 
 type ObjectType = typeof OBJECT_TYPE[keyof typeof OBJECT_TYPE];
@@ -18,5 +19,17 @@ export class Integer implements Object {
 
   type() {
     return OBJECT_TYPE.INTEGER_OBJ;
+  }
+}
+
+export class Bool implements Object {
+  constructor(public value: boolean) {}
+
+  inspect() {
+    return `${this.value}`;
+  }
+
+  type() {
+    return OBJECT_TYPE.BOOL_OBJ;
   }
 }
