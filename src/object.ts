@@ -3,9 +3,10 @@ export const OBJECT_TYPE = {
   BOOL_OBJ: 'BOOL',
   NULL_OBJ: 'NULL',
   RETURN_VALUE_OBJ: 'RETURN_VALUE',
+  ERROR_OBJ: 'ERROR',
 } as const;
 
-type ObjType = typeof OBJECT_TYPE[keyof typeof OBJECT_TYPE];
+export type ObjType = typeof OBJECT_TYPE[keyof typeof OBJECT_TYPE];
 
 export interface Obj {
   type: () => ObjType;
@@ -57,5 +58,17 @@ export class ReturnValue implements Obj {
 
   inspect() {
     return this.value.inspect();
+  }
+}
+
+export class Error implements Obj {
+  constructor(public message: string) {}
+
+  type() {
+    return OBJECT_TYPE.ERROR_OBJ;
+  }
+
+  inspect() {
+    return `ERROR: ${this.message}`;
   }
 }

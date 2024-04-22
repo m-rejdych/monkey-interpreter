@@ -1,4 +1,4 @@
-import { Obj, Integer, Bool, Null } from '../object';
+import { Obj, Integer, Bool, Null, Error } from '../object';
 import { evl } from '../evaluator';
 import { createProgram } from '../util/program';
 
@@ -265,6 +265,59 @@ if (10 > 1) {
   tests.forEach(({ input, expected }) => {
     const evaluated = runTestEval(input);
     testIntegerObject(evaluated, expected);
+  });
+});
+
+describe('Error handling', () => {
+  const tests: { input: string; expected: string }[] = [
+    {
+      input: '5 + true;',
+      expected: 'type mismatch: INTEGER + BOOL',
+    },
+    {
+      input: '5 + true; 5;',
+      expected: 'type mismatch: INTEGER + BOOL',
+    },
+    {
+      input: '-true;',
+      expected: 'unknown operator: -BOOL',
+    },
+    {
+      input: 'true + false;',
+      expected: 'unknown operator: BOOL + BOOL',
+    },
+    {
+      input: '5; true + false; 5;',
+      expected: 'unknown operator: BOOL + BOOL',
+    },
+    {
+      input: 'if (10 > 1) { true + false; }',
+      expected: 'unknown operator: BOOL + BOOL',
+    },
+    {
+      input: `
+if (10 > 1) {
+  if (10 > 1) {
+    return true + false;
+  }
+
+  return 1;
+}`,
+      expected: 'unknown operator: BOOL + BOOL',
+    },
+  ];
+
+  tests.forEach(({ input, expected }) => {
+    const evaluated = runTestEval(input);
+
+    const isError = evaluated instanceof Error;
+    it('correctly detectes an error', () => {
+      expect(isError).toBe(true);
+    });
+
+    it('has correct error message', () => {
+      expect(isError && evaluated.message).toBe(expected);
+    });
   });
 });
 
