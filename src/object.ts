@@ -2,6 +2,7 @@ export const OBJECT_TYPE = {
   INTEGER_OBJ: 'INTEGER',
   BOOL_OBJ: 'BOOL',
   NULL_OBJ: 'NULL',
+  RETURN_VALUE_OBJ: 'RETURN_VALUE',
 } as const;
 
 type ObjType = typeof OBJECT_TYPE[keyof typeof OBJECT_TYPE];
@@ -44,5 +45,17 @@ export class Null implements Obj {
 
   inspect() {
     return 'null';
+  }
+}
+
+export class ReturnValue implements Obj {
+  constructor(public value: Obj) {}
+
+  type() {
+    return OBJECT_TYPE.RETURN_VALUE_OBJ;
+  }
+
+  inspect() {
+    return this.value.inspect();
   }
 }

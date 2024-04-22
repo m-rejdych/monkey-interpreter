@@ -3,14 +3,14 @@ import {
   Program,
   IntegerLiteral,
   BoolExpression,
-  Statement,
   ExpressionStatement,
   PrefixExpression,
   InfixExpression,
   IfExpression,
   BlockStatement,
+  ReturnStatement,
 } from './ast';
-import { OBJECT_TYPE, Obj, Integer, Bool, Null } from './object';
+import { OBJECT_TYPE, Obj, Integer, Bool, Null, ReturnValue } from './object';
 
 const TRUE = new Bool(true);
 const FALSE = new Bool(false);
@@ -21,7 +21,7 @@ export function evl(node: Node | null): Obj {
 
   switch (Object.getPrototypeOf(node).constructor) {
     case Program:
-      return evlStatements((node as Program).statements);
+      return evlProgram(node as Program);
     case ExpressionStatement:
       return evl((node as ExpressionStatement).expression);
     case IntegerLiteral:
@@ -42,20 +42,40 @@ export function evl(node: Node | null): Obj {
     case IfExpression:
       return evlIfExpression(node as IfExpression);
     case BlockStatement:
-      return evlStatements((node as BlockStatement).statements);
+      return evlBlockStatement(node as BlockStatement);
+    case ReturnStatement: {
+      const value = evl((node as ReturnStatement).returnValue);
+      return new ReturnValue(value);
+    }
     default:
       return NULL;
   }
 }
 
-function evlStatements(statements: Statement[]): Obj {
-  let result: Obj = new Null();
+function evlProgram(program: Program): Obj {
+  if (!program.statements.length) return NULL;
 
-  statements.forEach((statement) => {
+  let result: Obj;
+
+  for (const statement of program.statements) {
     result = evl(statement);
-  });
+    if (result instanceof ReturnValue) return result.value;
+  }
 
-  return result;
+  return result!;
+}
+
+function evlBlockStatement(block: BlockStatement): Obj {
+  if (!block.statements.length) return NULL;
+
+  let result: Obj;
+
+  for (const statement of block.statements) {
+    result = evl(statement);
+    if (result.type() === OBJECT_TYPE.RETURN_VALUE_OBJ) return result;
+  }
+
+  return result!;
 }
 
 function evlPrefixExpression(operator: string, right: Obj): Obj {

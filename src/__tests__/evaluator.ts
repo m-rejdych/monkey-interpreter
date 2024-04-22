@@ -231,6 +231,43 @@ describe('If else expressions', () => {
   });
 });
 
+describe('Return statements', () => {
+  const tests: { input: string; expected: number }[] = [
+    {
+      input: 'return 10;',
+      expected: 10,
+    },
+    {
+      input: 'return 10; 9;',
+      expected: 10,
+    },
+    {
+      input: 'return 2 * 5; 9;',
+      expected: 10,
+    },
+    {
+      input: '9; return 2 * 5; 9;',
+      expected: 10,
+    },
+    {
+      input: `
+if (10 > 1) {
+  if (10 > 1) {
+    return 10;
+  }
+
+  return 1;
+}`,
+      expected: 10,
+    },
+  ];
+
+  tests.forEach(({ input, expected }) => {
+    const evaluated = runTestEval(input);
+    testIntegerObject(evaluated, expected);
+  });
+});
+
 function runTestEval(input: string): Obj {
   const { program } = createProgram(input);
 
