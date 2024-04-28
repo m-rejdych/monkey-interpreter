@@ -1,13 +1,15 @@
 import { Lexer } from '../lexer';
 import { TOKEN_TYPE, TokenType } from '../token';
 
-describe('Tokens', () => {
+describe('Next token', () => {
   const input = `let five = 5;
 let ten = 10;
    let add = fn(x, y) {
      x + y;
 };
    let result = add(five, ten);
+   "foobar"
+   "foo bar"
    `;
 
   const lexer = new Lexer(input);
@@ -50,6 +52,8 @@ let ten = 10;
       { type: TOKEN_TYPE.IDENT, literal: 'ten' },
       { type: TOKEN_TYPE.RPAREN, literal: ')' },
       { type: TOKEN_TYPE.SEMICOLON, literal: ';' },
+      { type: TOKEN_TYPE.STRING, literal: 'foobar' },
+      { type: TOKEN_TYPE.STRING, literal: 'foo bar' },
       { type: TOKEN_TYPE.EOF, literal: '' },
     ];
 

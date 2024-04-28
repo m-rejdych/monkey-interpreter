@@ -5,6 +5,7 @@ export const TOKEN_TYPE = {
   // Identifiers + literals
   IDENT: 'IDENT',
   INT: 'INT',
+  STRING: 'STRING',
 
   // Operatos
   ASSIGN: '=',

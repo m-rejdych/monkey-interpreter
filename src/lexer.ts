@@ -108,6 +108,9 @@ export class Lexer {
       case null:
         token = new Token(TOKEN_TYPE.EOF, '');
         break;
+      case '"':
+        token = new Token(TOKEN_TYPE.STRING, this.readString());
+        break;
       default:
         if (isLetter(this.ch)) {
           const ident = this.readIdentifier();
@@ -140,6 +143,19 @@ export class Lexer {
     }
 
     return this.input[this.readPosition] as string;
+  }
+
+  readString(): string {
+    this.readChar();
+
+    let str = '';
+
+    while (this.ch !== '"' && this.ch !== null) {
+      str += this.ch;
+      this.readChar();
+    }
+
+    return str;
   }
 }
 
