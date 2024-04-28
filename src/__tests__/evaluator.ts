@@ -309,6 +309,10 @@ if (10 > 1) {
       input: 'foobar',
       expected: 'identifier not found: foobar',
     },
+    {
+      input: '"Hello" - "World"',
+      expected: 'unknown operator: STRING - STRING',
+    },
   ];
 
   tests.forEach(({ input, expected }) => {
@@ -411,15 +415,15 @@ describe('String literal', () => {
 
   const evaluated = runTestEval(input);
 
-  const isString = isStringObject(evaluated);
+  testStringObject(evaluated, 'hello world!');
+});
 
-  it('is instance of a string', () => {
-    expect(isString).toBe(true);
-  });
+describe('String concatenation', () => {
+  const input = '"Hello" + " " + "World!"';
 
-  it('has correct value', () => {
-    expect(isString && evaluated.value).toBe('hello world!');
-  });
+  const evaluated = runTestEval(input);
+
+  testStringObject(evaluated, 'Hello World!');
 });
 
 function runTestEval(input: string): Obj {
@@ -450,6 +454,19 @@ function testBoolObject(obj: Obj, value: boolean): void {
   it('has correct value', () => {
     expect(isBool && obj.value).toBe(value);
   });
+}
+
+function testStringObject(obj: Obj, value: string): void {
+  const isString = isStringObject(obj);
+
+  it('is instance of a string', () => {
+    expect(isString).toBe(true);
+  });
+
+  it('has correct value', () => {
+    expect(isString && obj.value).toBe(value);
+  });
+
 }
 
 function testNullObject(obj: Obj): void {

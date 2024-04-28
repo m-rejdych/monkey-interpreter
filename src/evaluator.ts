@@ -152,6 +152,9 @@ function evlInfixExpression(left: Obj, operator: string, right: Obj): Obj {
   if (left.type() === OBJECT_TYPE.INTEGER_OBJ && right.type() === OBJECT_TYPE.INTEGER_OBJ) {
     return evlIntegerInfixExpression(left, operator, right);
   }
+  if (left.type() === OBJECT_TYPE.STRING_OBJ && right.type() === OBJECT_TYPE.STRING_OBJ) {
+    return evlStringInfixExpression(left, operator, right);
+  }
 
   if (left.type() !== right.type()) {
     return new Error(`type mismatch: ${left.type()} ${operator} ${right.type()}`);
@@ -191,6 +194,12 @@ function evlIntegerInfixExpression(left: Obj, operator: string, right: Obj): Obj
     default:
       return new Error(`unknown operator: ${left.type()} ${operator} ${right.type()}`);
   }
+}
+
+function evlStringInfixExpression(left: Obj, operator: string, right: Obj): Obj {
+  if (operator !== '+')
+    return new Error(`unknown operator: ${left.type()} ${operator} ${right.type()}`);
+  return new String(`${(left as String).value}${(right as String).value}`);
 }
 
 function evlBangOperatorExpression(right: Obj): Obj {
