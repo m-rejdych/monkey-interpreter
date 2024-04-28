@@ -14,6 +14,7 @@ import {
   Identifier,
   FunctionExpression,
   CallExpression,
+  StringLiteral,
 } from './ast';
 import {
   OBJECT_TYPE,
@@ -26,6 +27,7 @@ import {
   Error,
   Environment,
   Function,
+  String,
 } from './object';
 
 const TRUE = new Bool(true);
@@ -94,6 +96,8 @@ export function evl(node: Node | null, env: Environment): Obj {
 
       return applyFunction(func, args);
     }
+    case StringLiteral:
+      return new String((node as StringLiteral).value);
     default:
       return NULL;
   }

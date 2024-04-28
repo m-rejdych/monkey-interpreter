@@ -7,6 +7,7 @@ export const OBJECT_TYPE = {
   RETURN_VALUE_OBJ: 'RETURN_VALUE',
   ERROR_OBJ: 'ERROR',
   FUNCTION_OBJ: 'FUNCTION',
+  STRING_OBJ: 'STRING',
 } as const;
 
 export type ObjType = (typeof OBJECT_TYPE)[keyof typeof OBJECT_TYPE];
@@ -106,5 +107,17 @@ export class Function implements Obj {
     return `fn (${this.args.map((param) => param.string())}) {
 ${this.body.string()}
 }`;
+  }
+}
+
+export class String implements Obj {
+  constructor(public value: string) {}
+
+  type() {
+    return OBJECT_TYPE.STRING_OBJ;
+  }
+
+  inspect() {
+    return this.value;
   }
 }

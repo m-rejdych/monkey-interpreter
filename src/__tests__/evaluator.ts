@@ -1,4 +1,4 @@
-import { Obj, Integer, Bool, Null, Error, Environment, Function } from '../object';
+import { Obj, Integer, Bool, Null, Error, Environment, Function, String } from '../object';
 import { evl } from '../evaluator';
 import { createProgram } from '../util/program';
 
@@ -406,6 +406,22 @@ describe('Function application', () => {
   });
 });
 
+describe('String literal', () => {
+  const input = '"hello world!"';
+
+  const evaluated = runTestEval(input);
+
+  const isString = isStringObject(evaluated);
+
+  it('is instance of a string', () => {
+    expect(isString).toBe(true);
+  });
+
+  it('has correct value', () => {
+    expect(isString && evaluated.value).toBe('hello world!');
+  });
+});
+
 function runTestEval(input: string): Obj {
   const { program } = createProgram(input);
 
@@ -443,8 +459,6 @@ function testNullObject(obj: Obj): void {
   });
 }
 
-//function testFunctionObject(obj: Obj): void
-
 function isIntegerObject(obj: Obj): obj is Integer {
   return obj instanceof Integer;
 }
@@ -457,6 +471,10 @@ function isNullObject(obj: Obj): obj is Null {
   return obj instanceof Null;
 }
 
-function isFunctionObject(func: Object): func is Function {
+function isFunctionObject(func: Obj): func is Function {
   return func instanceof Function;
+}
+
+function isStringObject(str: Obj): str is String {
+  return str instanceof String;
 }
