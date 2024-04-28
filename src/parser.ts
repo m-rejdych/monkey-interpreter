@@ -16,6 +16,7 @@ import {
   IfExpression,
   FunctionExpression,
   CallExpression,
+  StringLiteral,
 } from './ast';
 
 type PrefixParseFn = () => Expression | null;
@@ -65,6 +66,7 @@ export class Parser {
     this.registerPrefix(TOKEN_TYPE.RPAREN, this.parseGroupedExpression.bind(this));
     this.registerPrefix(TOKEN_TYPE.IF, this.parseIfExpression.bind(this));
     this.registerPrefix(TOKEN_TYPE.FUNCTION, this.parseFunctionExpression.bind(this));
+    this.registerPrefix(TOKEN_TYPE.STRING, this.parseStringLiteral.bind(this));
     this.registerInfix(TOKEN_TYPE.EQ, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.NOT_EQ, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.LT, this.parseInfixExpression.bind(this));
@@ -369,6 +371,10 @@ export class Parser {
     }
 
     return args;
+  }
+
+  parseStringLiteral(): StringLiteral {
+    return new StringLiteral(this.curToken, this.curToken.literal);
   }
 
   curTokenIs(type: TokenType): boolean {

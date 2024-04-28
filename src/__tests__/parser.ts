@@ -14,6 +14,7 @@ import {
   IfExpression,
   FunctionExpression,
   CallExpression,
+  StringLiteral,
 } from '../ast';
 import { createProgram } from '../util/program';
 
@@ -436,6 +437,31 @@ describe('Call expression', () => {
   testInfixExpression(args?.[2] ?? null, 3, '+', 5);
 });
 
+describe('String literal', () => {
+  const input = '"hello world!"';
+
+  const { parser, program } = createProgram(input);
+
+  testParserErrors(parser);
+  testNumberOfStatements(program, 1);
+
+  const stringExpression = program.statements[0] ?? null;
+  testExpressionStatement(stringExpression);
+
+  const stringLiteral = isExpressionStatement(stringExpression)
+    ? stringExpression.expression
+    : null;
+  const isString = isStringLiteral(stringLiteral);
+
+  it('is a StringLiteral', () => {
+    expect(isString).toBe(true);
+  });
+
+  it('has correct value', () => {
+    expect(isString && stringLiteral.value).toBe('hello world!');
+  });
+});
+
 function testLetStatement(statement: Statement | null, name: string): void {
   it('parses let statement', () => {
     expect(statement?.tokenLiteral()).toBe('let');
@@ -555,7 +581,6 @@ function testOperator(expression: Expression | null, operator: string): void {
   });
 }
 
-
 function isLetStatement(statement: Statement | null): statement is LetStatement {
   return statement instanceof LetStatement;
 }
@@ -602,4 +627,8 @@ function isFunctionExpression(expression: Expression | null): expression is Func
 
 function isCallExpression(expression: Expression | null): expression is CallExpression {
   return expression instanceof CallExpression;
+}
+
+function isStringLiteral(expression: Expression | null): expression is StringLiteral {
+  return expression instanceof StringLiteral;
 }
