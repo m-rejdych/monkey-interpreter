@@ -1,6 +1,7 @@
 import {
   Node,
   Program,
+  Expression,
   IntegerLiteral,
   BoolExpression,
   ExpressionStatement,
@@ -9,63 +10,102 @@ import {
   IfExpression,
   BlockStatement,
   ReturnStatement,
+  LetStatement,
+  Identifier,
+  FunctionExpression,
+  CallExpression,
 } from './ast';
-import { OBJECT_TYPE, Obj, ObjType, Integer, Bool, Null, ReturnValue, Error } from './object';
+import {
+  OBJECT_TYPE,
+  Obj,
+  ObjType,
+  Integer,
+  Bool,
+  Null,
+  ReturnValue,
+  Error,
+  Environment,
+  Function,
+} from './object';
 
 const TRUE = new Bool(true);
 const FALSE = new Bool(false);
 const NULL = new Null();
 const EARLY_RETURN_OBJECT_TYPES: ObjType[] = [OBJECT_TYPE.RETURN_VALUE_OBJ, OBJECT_TYPE.ERROR_OBJ];
 
-export function evl(node: Node | null): Obj {
+export function evl(node: Node | null, env: Environment): Obj {
   if (!node) return NULL;
 
   switch (Object.getPrototypeOf(node).constructor) {
     case Program:
-      return evlProgram(node as Program);
+      return evlProgram(node as Program, env);
     case ExpressionStatement:
-      return evl((node as ExpressionStatement).expression);
+      return evl((node as ExpressionStatement).expression, env);
     case IntegerLiteral:
       return new Integer((node as IntegerLiteral).value);
     case BoolExpression:
       return nativeBoolToBoolObject((node as BoolExpression).value);
     case PrefixExpression: {
       const nd = node as PrefixExpression;
-      const right = evl(nd.right);
+      const right = evl(nd.right, env);
       if (isError(right)) return right;
       return evlPrefixExpression((node as PrefixExpression).operator, right);
     }
     case InfixExpression: {
       const nd = node as InfixExpression;
-      const left = evl(nd.left);
+      const left = evl(nd.left, env);
       if (isError(left)) return left;
 
-      const right = evl(nd.right);
+      const right = evl(nd.right, env);
       if (isError(right)) return right;
 
       return evlInfixExpression(left, nd.operator, right);
     }
     case IfExpression:
-      return evlIfExpression(node as IfExpression);
+      return evlIfExpression(node as IfExpression, env);
     case BlockStatement:
-      return evlBlockStatement(node as BlockStatement);
+      return evlBlockStatement(node as BlockStatement, env);
     case ReturnStatement: {
-      const value = evl((node as ReturnStatement).returnValue);
+      const value = evl((node as ReturnStatement).returnValue, env);
       if (isError(value)) return value;
       return new ReturnValue(value);
+    }
+    case LetStatement: {
+      const nd = node as LetStatement;
+      const value = evl(nd.value, env);
+      if (isError(value)) return value;
+      env.set(nd.name.value, value);
+      return NULL;
+    }
+    case Identifier:
+      return evlIdentifier(node as Identifier, env);
+    case FunctionExpression: {
+      const nd = node as FunctionExpression;
+      return new Function(nd.args, nd.body, env);
+    }
+    case CallExpression: {
+      const nd = node as CallExpression;
+      const func = evl(nd.func, env);
+      if (isError(func)) return func;
+      const args = evlExpressions(nd.args, env);
+      if (args.length === 1 && isError(args[0]!)) {
+        return args[0];
+      }
+
+      return applyFunction(func, args);
     }
     default:
       return NULL;
   }
 }
 
-function evlProgram(program: Program): Obj {
+function evlProgram(program: Program, env: Environment): Obj {
   if (!program.statements.length) return NULL;
 
   let result: Obj;
 
   for (const statement of program.statements) {
-    result = evl(statement);
+    result = evl(statement, env);
     switch (Object.getPrototypeOf(result).constructor) {
       case ReturnValue:
         return (result as ReturnValue).value;
@@ -80,13 +120,13 @@ function evlProgram(program: Program): Obj {
   return result!;
 }
 
-function evlBlockStatement(block: BlockStatement): Obj {
+function evlBlockStatement(block: BlockStatement, env: Environment): Obj {
   if (!block.statements.length) return NULL;
 
   let result: Obj;
 
   for (const statement of block.statements) {
-    result = evl(statement);
+    result = evl(statement, env);
     if (EARLY_RETURN_OBJECT_TYPES.includes(result.type())) return result;
   }
 
@@ -170,15 +210,65 @@ function evlMinusPrefixOperatorExpression(right: Obj): Obj {
   return new Integer(-(right as Integer).value);
 }
 
-function evlIfExpression({ condition, consequence, alternative }: IfExpression): Obj {
-  const evlCondition = evl(condition);
+function evlIfExpression(
+  { condition, consequence, alternative }: IfExpression,
+  env: Environment,
+): Obj {
+  const evlCondition = evl(condition, env);
   if (isError(evlCondition)) return evlCondition;
 
   if (isTruthy(evlCondition)) {
-    return evl(consequence);
+    return evl(consequence, env);
   }
 
-  return alternative ? evl(alternative) : NULL;
+  return alternative ? evl(alternative, env) : NULL;
+}
+
+function evlIdentifier(node: Identifier, env: Environment): Obj {
+  const value = env.get(node.value);
+  if (!value) return new Error(`identifier not found: ${node.value}`);
+  return value;
+}
+
+function evlExpressions(expressions: Expression[], env: Environment): Obj[] {
+  const result: Obj[] = [];
+
+  for (const expression of expressions) {
+    const evaluated = evl(expression, env);
+    if (isError(evaluated)) return [evaluated];
+    result.push(evaluated);
+  }
+
+  return result;
+}
+
+function applyFunction(func: Obj, args: Obj[]): Obj {
+  if (!(func instanceof Function)) {
+    return new Error(`not a function: ${func.type()}`);
+  }
+
+  const extendedEnv = extendFunctionEnv(func, args);
+  const evaluated = evl(func.body, extendedEnv);
+
+  return unwrapReturnValue(evaluated);
+}
+
+function unwrapReturnValue(obj: Obj): Obj {
+  if (obj instanceof ReturnValue) {
+    return obj.value;
+  }
+
+  return obj;
+}
+
+function extendFunctionEnv(func: Function, args: Obj[]): Environment {
+  const env = new Environment(func.env);
+
+  func.args.forEach(({ value }, idx) => {
+    env.set(value, args[idx]!);
+  });
+
+  return env;
 }
 
 function nativeBoolToBoolObject(input: boolean): Bool {

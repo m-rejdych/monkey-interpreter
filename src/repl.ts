@@ -3,6 +3,7 @@ import type { Readable, Writable } from 'stream';
 
 import { Lexer } from './lexer';
 import { Parser } from './parser';
+import { Environment } from './object';
 import { evl } from './evaluator';
 
 const PROMPT = '>> ' as const;
@@ -28,6 +29,7 @@ export class Repl {
 
   start(): void {
     const readInterface = readline.createInterface(this.input, this.output);
+    const env = new Environment();
 
     this.output.write(PROMPT);
 
@@ -41,7 +43,7 @@ export class Repl {
         return;
       }
 
-      this.output.write(evl(program).inspect());
+      this.output.write(evl(program, env).inspect());
       this.output.write('\n');
       this.output.write(PROMPT);
     });
