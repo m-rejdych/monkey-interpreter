@@ -318,14 +318,7 @@ if (10 > 1) {
   tests.forEach(({ input, expected }) => {
     const evaluated = runTestEval(input);
 
-    const isError = evaluated instanceof Error;
-    it('correctly detectes an error', () => {
-      expect(isError).toBe(true);
-    });
-
-    it('has correct error message', () => {
-      expect(isError && evaluated.message).toBe(expected);
-    });
+    testErrorObject(evaluated, expected);
   });
 });
 
@@ -426,6 +419,47 @@ describe('String concatenation', () => {
   testStringObject(evaluated, 'Hello World!');
 });
 
+describe('Builtin functions', () => {
+  const tests: { input: string; expected: unknown }[] = [
+    {
+      input: 'len("")',
+      expected: 0,
+    },
+    {
+      input: 'len("four")',
+      expected: 4,
+    },
+    {
+      input: 'len("hello world")',
+      expected: 11,
+    },
+    {
+      input: 'len(1)',
+      expected: 'argument to `len` not supported, got INTEGER',
+    },
+    {
+      input: 'len("one", "two")',
+      expected: 'wrong number of arguments, got=2, want=1',
+    },
+    {
+      input: 'len("four")',
+      expected: 4,
+    },
+  ];
+
+  tests.forEach(({ input, expected }) => {
+    const evaluated = runTestEval(input);
+
+    switch (typeof expected) {
+      case 'number':
+        testIntegerObject(evaluated, expected);
+        break;
+      case 'string':
+        testErrorObject(evaluated, expected);
+    }
+  });
+});
+
 function runTestEval(input: string): Obj {
   const { program } = createProgram(input);
 
@@ -476,6 +510,18 @@ function testNullObject(obj: Obj): void {
   });
 }
 
+function testErrorObject(obj: Obj, message: string) {
+  const isError = isErrorObject(obj);
+
+  it('is instance of an error', () => {
+    expect(isError).toBe(true);
+  });
+
+  it('has correct error messagee', () => {
+    expect(isError && obj.message).toBe(message);
+  });
+}
+
 function isIntegerObject(obj: Obj): obj is Integer {
   return obj instanceof Integer;
 }
@@ -494,4 +540,8 @@ function isFunctionObject(func: Obj): func is Function {
 
 function isStringObject(str: Obj): str is String {
   return str instanceof String;
+}
+
+function isErrorObject(err: Obj): err is Error {
+  return err instanceof Error;
 }

@@ -28,11 +28,13 @@ import {
   Environment,
   Function,
   String,
+  Builtin,
 } from './object';
+import { BUILTINS, isBuiltin } from './builtins';
 
 const TRUE = new Bool(true);
 const FALSE = new Bool(false);
-const NULL = new Null();
+export const NULL = new Null();
 const EARLY_RETURN_OBJECT_TYPES: ObjType[] = [OBJECT_TYPE.RETURN_VALUE_OBJ, OBJECT_TYPE.ERROR_OBJ];
 
 export function evl(node: Node | null, env: Environment): Obj {
@@ -238,9 +240,15 @@ function evlIfExpression(
 }
 
 function evlIdentifier(node: Identifier, env: Environment): Obj {
-  const value = env.get(node.value);
-  if (!value) return new Error(`identifier not found: ${node.value}`);
-  return value;
+  const nodeValue = node.value;
+
+  const value = env.get(nodeValue);
+  if (value) return value;
+
+  const builtin = isBuiltin(nodeValue) ? BUILTINS[nodeValue] : null;
+  if (builtin) return builtin;
+
+  return new Error(`identifier not found: ${node.value}`);
 }
 
 function evlExpressions(expressions: Expression[], env: Environment): Obj[] {
@@ -256,14 +264,19 @@ function evlExpressions(expressions: Expression[], env: Environment): Obj[] {
 }
 
 function applyFunction(func: Obj, args: Obj[]): Obj {
-  if (!(func instanceof Function)) {
-    return new Error(`not a function: ${func.type()}`);
+  switch (Object.getPrototypeOf(func).constructor) {
+    case Function: {
+      const fn = func as Function;
+      const extendedEnv = extendFunctionEnv(fn, args);
+      const evaluated = evl(fn.body, extendedEnv);
+
+      return unwrapReturnValue(evaluated);
+    }
+    case Builtin:
+      return (func as Builtin).fn(...args);
+    default:
+      return new Error(`not a function: ${func.type()}`);
   }
-
-  const extendedEnv = extendFunctionEnv(func, args);
-  const evaluated = evl(func.body, extendedEnv);
-
-  return unwrapReturnValue(evaluated);
 }
 
 function unwrapReturnValue(obj: Obj): Obj {

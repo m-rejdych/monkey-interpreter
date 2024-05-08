@@ -8,9 +8,12 @@ export const OBJECT_TYPE = {
   ERROR_OBJ: 'ERROR',
   FUNCTION_OBJ: 'FUNCTION',
   STRING_OBJ: 'STRING',
+  BUILTIN_OBJ: 'BUILTIN',
 } as const;
 
 export type ObjType = (typeof OBJECT_TYPE)[keyof typeof OBJECT_TYPE];
+
+type BuiltinFunction = (...args: Obj[]) => Obj;
 
 export interface Obj {
   type: () => ObjType;
@@ -119,5 +122,17 @@ export class String implements Obj {
 
   inspect() {
     return this.value;
+  }
+}
+
+export class Builtin implements Obj {
+  constructor(public fn: BuiltinFunction) {}
+
+  type() {
+    return OBJECT_TYPE.BUILTIN_OBJ;
+  }
+
+  inspect() {
+    return 'builtin function';
   }
 }
