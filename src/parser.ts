@@ -17,6 +17,7 @@ import {
   FunctionExpression,
   CallExpression,
   StringLiteral,
+  ArrayLiteral,
 } from './ast';
 
 type PrefixParseFn = () => Expression | null;
@@ -67,6 +68,7 @@ export class Parser {
     this.registerPrefix(TOKEN_TYPE.IF, this.parseIfExpression.bind(this));
     this.registerPrefix(TOKEN_TYPE.FUNCTION, this.parseFunctionExpression.bind(this));
     this.registerPrefix(TOKEN_TYPE.STRING, this.parseStringLiteral.bind(this));
+    this.registerPrefix(TOKEN_TYPE.LBRACKET, this.parseArrayLiteral.bind(this));
     this.registerInfix(TOKEN_TYPE.EQ, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.NOT_EQ, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.LT, this.parseInfixExpression.bind(this));
@@ -337,44 +339,52 @@ export class Parser {
 
   parseCallExpression(func: Expression): CallExpression | null {
     const functionToken = this.curToken;
-    const args = this.parseCallArguments();
+    const args = this.parseExpressionList(TOKEN_TYPE.RPAREN);
     if (!args) return null;
 
     return new CallExpression(functionToken, func, args);
   }
 
-  parseCallArguments(): Expression[] | null {
-    const args: Expression[] = [];
+  parseStringLiteral(): StringLiteral {
+    return new StringLiteral(this.curToken, this.curToken.literal);
+  }
+
+  parseArrayLiteral(): ArrayLiteral | null {
+    const token = this.curToken;
+
+    const elements = this.parseExpressionList(TOKEN_TYPE.RBRACKET);
+    if (!elements) return null;
+
+    return new ArrayLiteral(token, elements);
+  }
+
+  parseExpressionList(end: TokenType): Expression[] | null {
+    const list: Expression[] = [];
 
     this.nextToken();
 
-    if (this.curTokenIs(TOKEN_TYPE.RPAREN)) {
-      return args;
+    if (this.curTokenIs(end)) {
+      return list;
     }
 
-    const expression = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
-    if (!expression) return null;
-
-    args.push(expression);
+    const elem = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
+    if (!elem) return null;
+    list.push(elem);
 
     while (this.peekTokenIs(TOKEN_TYPE.COMMA)) {
       this.nextToken();
       this.nextToken();
-      const nextExpression = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
-      if (!nextExpression) return null;
+      const newElem = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
+      if (!newElem) return null;
 
-      args.push(nextExpression);
+      list.push(newElem);
     }
 
-    if (!this.expectPeek(TOKEN_TYPE.RPAREN)) {
+    if (!this.expectPeek(end)) {
       return null;
     }
 
-    return args;
-  }
-
-  parseStringLiteral(): StringLiteral {
-    return new StringLiteral(this.curToken, this.curToken.literal);
+    return list;
   }
 
   curTokenIs(type: TokenType): boolean {

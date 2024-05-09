@@ -27,6 +27,8 @@ export const TOKEN_TYPE = {
   RPAREN: ')',
   LBRACE: '{',
   RBRACE: '}',
+  LBRACKET: '[',
+  RBRACKET: ']',
 
   // Keywords
   FUNCTION: 'FUNCTION',

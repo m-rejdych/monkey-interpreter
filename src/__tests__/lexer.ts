@@ -10,6 +10,7 @@ let ten = 10;
    let result = add(five, ten);
    "foobar"
    "foo bar"
+   [1, 2];
    `;
 
   const lexer = new Lexer(input);
@@ -54,6 +55,12 @@ let ten = 10;
       { type: TOKEN_TYPE.SEMICOLON, literal: ';' },
       { type: TOKEN_TYPE.STRING, literal: 'foobar' },
       { type: TOKEN_TYPE.STRING, literal: 'foo bar' },
+      { type: TOKEN_TYPE.LBRACKET, literal: '[' },
+      { type: TOKEN_TYPE.INT, literal: '1' },
+      { type: TOKEN_TYPE.COMMA, literal: ',' },
+      { type: TOKEN_TYPE.INT, literal: '2' },
+      { type: TOKEN_TYPE.RBRACKET, literal: ']' },
+      { type: TOKEN_TYPE.SEMICOLON, literal: ';' },
       { type: TOKEN_TYPE.EOF, literal: '' },
     ];
 

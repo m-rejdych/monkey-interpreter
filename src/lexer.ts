@@ -105,11 +105,17 @@ export class Lexer {
       case '>':
         token = new Token(TOKEN_TYPE.GT, this.ch);
         break;
-      case null:
-        token = new Token(TOKEN_TYPE.EOF, '');
-        break;
       case '"':
         token = new Token(TOKEN_TYPE.STRING, this.readString());
+        break;
+      case '[':
+        token = new Token(TOKEN_TYPE.LBRACKET, this.ch);
+        break;
+      case ']':
+        token = new Token(TOKEN_TYPE.RBRACKET, this.ch);
+        break;
+      case null:
+        token = new Token(TOKEN_TYPE.EOF, '');
         break;
       default:
         if (isLetter(this.ch)) {

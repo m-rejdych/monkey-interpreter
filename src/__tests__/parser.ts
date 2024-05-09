@@ -15,6 +15,7 @@ import {
   FunctionExpression,
   CallExpression,
   StringLiteral,
+  ArrayLiteral,
 } from '../ast';
 import { createProgram } from '../util/program';
 
@@ -451,7 +452,7 @@ describe('String literal', () => {
   const stringLiteral = isExpressionStatement(stringExpression)
     ? stringExpression.expression
     : null;
-  const isString = isStringLiteral(stringLiteral);
+  const isString = isStringLiteralExpression(stringLiteral);
 
   it('is a StringLiteral', () => {
     expect(isString).toBe(true);
@@ -460,6 +461,32 @@ describe('String literal', () => {
   it('has correct value', () => {
     expect(isString && stringLiteral.value).toBe('hello world!');
   });
+});
+
+describe('Array literals', () => {
+  const input = '[1, 2 * 2, 3 + 3]';
+
+  const { parser, program } = createProgram(input);
+
+  testParserErrors(parser);
+  testNumberOfStatements(program, 1);
+
+  const statement = program.statements[0] ?? null;
+
+  testExpressionStatement(statement)
+
+  const array = isExpressionStatement(statement) ? statement.expression : null;
+  const isArray = isArrayLiteralExpression(array);
+
+  it('is array literal', () => {
+    expect(isArray).toBe(true);
+  });
+
+  const elements = isArray ? array.elements : [];
+
+  testIntegerLiteralExpression(elements[0] ?? null, 1);
+  testInfixExpression(elements[1] ?? null, 2, '*', 2);
+  testInfixExpression(elements[2] ?? null, 3, '+', 3);
 });
 
 function testLetStatement(statement: Statement | null, name: string): void {
@@ -629,6 +656,10 @@ function isCallExpression(expression: Expression | null): expression is CallExpr
   return expression instanceof CallExpression;
 }
 
-function isStringLiteral(expression: Expression | null): expression is StringLiteral {
+function isStringLiteralExpression(expression: Expression | null): expression is StringLiteral {
   return expression instanceof StringLiteral;
+}
+
+function isArrayLiteralExpression(expression: Expression | null): expression is ArrayLiteral {
+  return expression instanceof ArrayLiteral;
 }
