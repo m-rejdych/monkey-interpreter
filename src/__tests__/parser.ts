@@ -16,6 +16,7 @@ import {
   CallExpression,
   StringLiteral,
   ArrayLiteral,
+  IndexExpression,
 } from '../ast';
 import { createProgram } from '../util/program';
 
@@ -215,6 +216,8 @@ describe('Operator precedence parsing', () => {
       expected: 'add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))',
     },
     { input: 'add(a + b + c * d / f + g)', expected: 'add((((a + b) + ((c * d) / f)) + g))' },
+    { input: 'a * [1, 2, 3, 4][b * c] * d', expected: '((a * ([1, 2, 3, 4][(b * c)])) * d)' },
+    { input: 'add(a * b[2], b[1], 2 * [1, 2][1])', expected: 'add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))' },
   ];
 
   tests.forEach(({ input, expected }) => {
@@ -489,6 +492,28 @@ describe('Array literals', () => {
   testInfixExpression(elements[2] ?? null, 3, '+', 3);
 });
 
+describe('Parsing index expressions', () => {
+  const input = 'myArray[1 + 1]';
+
+  const { parser, program } = createProgram(input);
+
+  testParserErrors(parser);
+  testNumberOfStatements(program, 1);
+
+  const statement = program.statements[0] ?? null;
+  testExpressionStatement(statement);
+
+  const indexExpression = isExpressionStatement(statement) ? statement.expression : null;
+  const isIndex = isIndexExpression(indexExpression);
+
+  it('is instance of index expression', () => {
+    expect(isIndex).toBe(true);
+  });
+
+  testIdentifierExpression(isIndex ? indexExpression.left : null, 'myArray');
+  testInfixExpression(isIndex ? indexExpression.index : null, 1, '+', 1);
+});
+
 function testLetStatement(statement: Statement | null, name: string): void {
   it('parses let statement', () => {
     expect(statement?.tokenLiteral()).toBe('let');
@@ -662,4 +687,8 @@ function isStringLiteralExpression(expression: Expression | null): expression is
 
 function isArrayLiteralExpression(expression: Expression | null): expression is ArrayLiteral {
   return expression instanceof ArrayLiteral;
+}
+
+function isIndexExpression(expression: Expression | null): expression is IndexExpression {
+  return expression instanceof IndexExpression;
 }

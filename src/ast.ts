@@ -283,3 +283,21 @@ export class ArrayLiteral implements Expression {
     return `[${this.elements.map((element) => element.string()).join(', ')}]`;
   }
 }
+
+export class IndexExpression implements Expression {
+  constructor(
+    public token: Token,
+    public left: Expression,
+    public index: Expression,
+  ) {}
+
+  tokenLiteral() {
+    return this.token.literal;
+  }
+
+  expressionNode() {}
+
+  string() {
+    return `(${this.left.string()}[${this.index.string()}])`;
+  }
+}

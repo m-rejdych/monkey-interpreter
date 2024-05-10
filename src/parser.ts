@@ -18,6 +18,7 @@ import {
   CallExpression,
   StringLiteral,
   ArrayLiteral,
+  IndexExpression,
 } from './ast';
 
 type PrefixParseFn = () => Expression | null;
@@ -31,6 +32,7 @@ const PRECEDENCE_TYPE = {
   PRODUCT: 4,
   PREFIX: 5,
   CALL: 6,
+  INDEX: 7,
 } as const;
 
 type PrecedenceType = (typeof PRECEDENCE_TYPE)[keyof typeof PRECEDENCE_TYPE];
@@ -45,6 +47,7 @@ const PRECEDENCES: Partial<Record<TokenType, PrecedenceType>> = {
   [TOKEN_TYPE.SLASH]: PRECEDENCE_TYPE.PRODUCT,
   [TOKEN_TYPE.ASTERISK]: PRECEDENCE_TYPE.PRODUCT,
   [TOKEN_TYPE.LPAREN]: PRECEDENCE_TYPE.CALL,
+  [TOKEN_TYPE.LBRACKET]: PRECEDENCE_TYPE.INDEX,
 };
 
 export class Parser {
@@ -78,6 +81,7 @@ export class Parser {
     this.registerInfix(TOKEN_TYPE.SLASH, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.ASTERISK, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.LPAREN, this.parseCallExpression.bind(this));
+    this.registerInfix(TOKEN_TYPE.LBRACKET, this.parseIndexExpression.bind(this));
   }
 
   nextToken(): void {
@@ -385,6 +389,20 @@ export class Parser {
     }
 
     return list;
+  }
+
+  parseIndexExpression(left: Expression): IndexExpression | null {
+    const token = this.curToken;
+    this.nextToken();
+
+    const index = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
+    if (!index) return null;
+
+    if (!this.expectPeek(TOKEN_TYPE.RBRACKET)) {
+      return null;
+    }
+
+    return new IndexExpression(token, left, index);
   }
 
   curTokenIs(type: TokenType): boolean {
