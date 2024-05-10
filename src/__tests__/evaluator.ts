@@ -482,6 +482,61 @@ describe('Array literals', () => {
   testIntegerObject(elements[2] ?? null, 6);
 });
 
+describe('Index expressions', () => {
+  const tests: { input: string; expected: unknown }[] = [
+    {
+      input: '[1, 2, 3][0]',
+      expected: 1,
+    },
+    {
+      input: '[1, 2, 3][1]',
+      expected: 2,
+    },
+    {
+      input: '[1, 2, 3][2]',
+      expected: 3,
+    },
+    {
+      input: 'let i = 0; [1][i];',
+      expected: 1,
+    },
+    {
+      input: '[1, 2, 3][1 + 1];',
+      expected: 3,
+    },
+    {
+      input: 'let myArray = [1, 2, 3]; myArray[2];',
+      expected: 3,
+    },
+    {
+      input: 'let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];',
+      expected: 6,
+    },
+    {
+      input: 'let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i];',
+      expected: 2,
+    },
+    {
+      input: '[1, 2, 3][3]',
+      expected: null,
+    },
+    {
+      input: '[1, 2, 3][-1]',
+      expected: null,
+    },
+  ];
+
+  tests.forEach(({ input, expected }) => {
+    const evaluated = runTestEval(input);
+
+    if (typeof expected === 'number') {
+      testIntegerObject(evaluated, expected);
+    } else {
+      testNullObject(evaluated);
+    }
+  });
+});
+
 function runTestEval(input: string): Obj {
   const { program } = createProgram(input);
 

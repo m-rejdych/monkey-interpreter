@@ -16,6 +16,7 @@ import {
   CallExpression,
   StringLiteral,
   ArrayLiteral,
+  IndexExpression,
 } from './ast';
 import {
   OBJECT_TYPE,
@@ -108,9 +109,34 @@ export function evl(node: Node | null, env: Environment): Obj {
       if (elements.length === 1 && isError(elements[0]!)) return elements[0];
       return new Array(elements);
     }
+    case IndexExpression: {
+      const nd = node as IndexExpression;
+      const left = evl(nd.left, env);
+      if (isError(left)) return left;
+      const index = evl(nd.index, env);
+      if (isError(index)) return left;
+      return evlIndexExpression(left, index);
+    }
     default:
       return NULL;
   }
+}
+
+function evlIndexExpression(left: Obj, index: Obj): Obj {
+  if (left.type() !== OBJECT_TYPE.ARRAY_OBJ || index.type() !== OBJECT_TYPE.INTEGER_OBJ) {
+    return new Error(`index operator not supported: ${left.type()}`);
+  }
+
+  return evlArrayIndexExpression(left as Array, index as Integer);
+}
+
+function evlArrayIndexExpression(left: Array, index: Integer): Obj {
+  const idx = index.value;
+  const max = left.elements.length - 1;
+
+  if (idx < 0 || idx > max) return NULL;
+
+  return left.elements[idx]!;
 }
 
 function evlProgram(program: Program, env: Environment): Obj {
