@@ -1,4 +1,4 @@
-import { Obj, Integer, Bool, Null, Error, Environment, Function, String } from '../object';
+import { Obj, Integer, Bool, Null, Error, Environment, Function, String, Array } from '../object';
 import { evl } from '../evaluator';
 import { createProgram } from '../util/program';
 
@@ -460,13 +460,35 @@ describe('Builtin functions', () => {
   });
 });
 
+describe('Array literals', () => {
+  const input = '[1, 2 * 2, 3 + 3]';
+
+  const evaluated = runTestEval(input);
+
+  const isArray = isArrayObject(evaluated);
+
+  it('is instance of an array', () => {
+    expect(isArray).toBe(true);
+  });
+
+  it('has correct number of elements', () => {
+    expect(isArray && evaluated.elements.length).toBe(3);
+  });
+
+  const elements = isArray ? evaluated.elements : [];
+
+  testIntegerObject(elements[0] ?? null, 1);
+  testIntegerObject(elements[1] ?? null, 4);
+  testIntegerObject(elements[2] ?? null, 6);
+});
+
 function runTestEval(input: string): Obj {
   const { program } = createProgram(input);
 
   return evl(program, new Environment());
 }
 
-function testIntegerObject(obj: Obj, value: number): void {
+function testIntegerObject(obj: Obj | null, value: number): void {
   const isInteger = isIntegerObject(obj);
 
   it('is instance of an integer', () => {
@@ -522,7 +544,7 @@ function testErrorObject(obj: Obj, message: string) {
   });
 }
 
-function isIntegerObject(obj: Obj): obj is Integer {
+function isIntegerObject(obj: Obj | null): obj is Integer {
   return obj instanceof Integer;
 }
 
@@ -544,4 +566,8 @@ function isStringObject(str: Obj): str is String {
 
 function isErrorObject(err: Obj): err is Error {
   return err instanceof Error;
+}
+
+function isArrayObject(arr: Obj): arr is Array {
+  return arr instanceof Array;
 }

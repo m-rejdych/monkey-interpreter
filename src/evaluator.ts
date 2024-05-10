@@ -15,6 +15,7 @@ import {
   FunctionExpression,
   CallExpression,
   StringLiteral,
+  ArrayLiteral,
 } from './ast';
 import {
   OBJECT_TYPE,
@@ -29,6 +30,7 @@ import {
   Function,
   String,
   Builtin,
+  Array,
 } from './object';
 import { BUILTINS, isBuiltin } from './builtins';
 
@@ -100,6 +102,12 @@ export function evl(node: Node | null, env: Environment): Obj {
     }
     case StringLiteral:
       return new String((node as StringLiteral).value);
+    case ArrayLiteral: {
+      const nd = node as ArrayLiteral;
+      const elements = evlExpressions(nd.elements, env);
+      if (elements.length === 1 && isError(elements[0]!)) return elements[0];
+      return new Array(elements);
+    }
     default:
       return NULL;
   }

@@ -9,6 +9,7 @@ export const OBJECT_TYPE = {
   FUNCTION_OBJ: 'FUNCTION',
   STRING_OBJ: 'STRING',
   BUILTIN_OBJ: 'BUILTIN',
+  ARRAY_OBJ: 'ARRAY',
 } as const;
 
 export type ObjType = (typeof OBJECT_TYPE)[keyof typeof OBJECT_TYPE];
@@ -134,5 +135,17 @@ export class Builtin implements Obj {
 
   inspect() {
     return 'builtin function';
+  }
+}
+
+export class Array implements Obj {
+  constructor(public elements: Obj[]) {}
+
+  type() {
+    return OBJECT_TYPE.ARRAY_OBJ;
+  }
+
+  inspect() {
+    return `[${this.elements.map((element) => element.inspect()).join(', ')}]`;
   }
 }
