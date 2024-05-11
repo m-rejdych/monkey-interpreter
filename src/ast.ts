@@ -301,3 +301,20 @@ export class IndexExpression implements Expression {
     return `(${this.left.string()}[${this.index.string()}])`;
   }
 }
+
+export class HashLiteral implements Expression {
+  constructor(
+    public token: Token,
+    public entries: [Expression, Expression][],
+  ) {}
+
+  expressionNode() {}
+
+  tokenLiteral() {
+    return this.token.literal;
+  }
+
+  string() {
+    return `{${this.entries.map(([key, value]) => `${key.string()}:${value.string()}`)}}`;
+  }
+}

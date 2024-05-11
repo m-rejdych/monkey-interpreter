@@ -19,6 +19,7 @@ import {
   StringLiteral,
   ArrayLiteral,
   IndexExpression,
+  HashLiteral,
 } from './ast';
 
 type PrefixParseFn = () => Expression | null;
@@ -72,6 +73,7 @@ export class Parser {
     this.registerPrefix(TOKEN_TYPE.FUNCTION, this.parseFunctionExpression.bind(this));
     this.registerPrefix(TOKEN_TYPE.STRING, this.parseStringLiteral.bind(this));
     this.registerPrefix(TOKEN_TYPE.LBRACKET, this.parseArrayLiteral.bind(this));
+    this.registerPrefix(TOKEN_TYPE.LBRACE, this.parseHashLiteral.bind(this));
     this.registerInfix(TOKEN_TYPE.EQ, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.NOT_EQ, this.parseInfixExpression.bind(this));
     this.registerInfix(TOKEN_TYPE.LT, this.parseInfixExpression.bind(this));
@@ -403,6 +405,56 @@ export class Parser {
     }
 
     return new IndexExpression(token, left, index);
+  }
+
+  parseHashLiteral(): HashLiteral | null {
+    const token = this.curToken;
+    const entries: [Expression, Expression][] = [];
+
+    this.nextToken();
+
+    if (this.curTokenIs(TOKEN_TYPE.RBRACE)) {
+      return new HashLiteral(token, entries);
+    }
+
+    const key = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
+    if (!key) return null;
+
+    if (!this.expectPeek(TOKEN_TYPE.COLON)) {
+      return null;
+    }
+
+    this.nextToken();
+
+    const value = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
+    if (!value) return null;
+
+    entries.push([key, value]);
+
+    while (this.peekTokenIs(TOKEN_TYPE.COMMA)) {
+      this.nextToken();
+      this.nextToken();
+
+      const key = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
+      if (!key) return null;
+
+      if (!this.expectPeek(TOKEN_TYPE.COLON)) {
+        return null;
+      }
+
+      this.nextToken();
+
+      const value = this.parseExpression(PRECEDENCE_TYPE.LOWEST);
+      if (!value) return null;
+
+      entries.push([key, value]);
+    }
+
+    if (!this.expectPeek(TOKEN_TYPE.RBRACE)) {
+      return null;
+    }
+
+    return new HashLiteral(token, entries);
   }
 
   curTokenIs(type: TokenType): boolean {

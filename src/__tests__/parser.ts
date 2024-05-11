@@ -17,6 +17,7 @@ import {
   StringLiteral,
   ArrayLiteral,
   IndexExpression,
+  HashLiteral,
 } from '../ast';
 import { createProgram } from '../util/program';
 
@@ -217,7 +218,10 @@ describe('Operator precedence parsing', () => {
     },
     { input: 'add(a + b + c * d / f + g)', expected: 'add((((a + b) + ((c * d) / f)) + g))' },
     { input: 'a * [1, 2, 3, 4][b * c] * d', expected: '((a * ([1, 2, 3, 4][(b * c)])) * d)' },
-    { input: 'add(a * b[2], b[1], 2 * [1, 2][1])', expected: 'add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))' },
+    {
+      input: 'add(a * b[2], b[1], 2 * [1, 2][1])',
+      expected: 'add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))',
+    },
   ];
 
   tests.forEach(({ input, expected }) => {
@@ -449,21 +453,12 @@ describe('String literal', () => {
   testParserErrors(parser);
   testNumberOfStatements(program, 1);
 
-  const stringExpression = program.statements[0] ?? null;
-  testExpressionStatement(stringExpression);
+  const statement = program.statements[0] ?? null;
+  testExpressionStatement(statement);
 
-  const stringLiteral = isExpressionStatement(stringExpression)
-    ? stringExpression.expression
-    : null;
-  const isString = isStringLiteralExpression(stringLiteral);
+  const stringLiteral = isExpressionStatement(statement) ? statement.expression : null;
 
-  it('is a StringLiteral', () => {
-    expect(isString).toBe(true);
-  });
-
-  it('has correct value', () => {
-    expect(isString && stringLiteral.value).toBe('hello world!');
-  });
+  testStringLiteralExpression(stringLiteral, 'hello world!');
 });
 
 describe('Array literals', () => {
@@ -476,7 +471,7 @@ describe('Array literals', () => {
 
   const statement = program.statements[0] ?? null;
 
-  testExpressionStatement(statement)
+  testExpressionStatement(statement);
 
   const array = isExpressionStatement(statement) ? statement.expression : null;
   const isArray = isArrayLiteralExpression(array);
@@ -512,6 +507,170 @@ describe('Parsing index expressions', () => {
 
   testIdentifierExpression(isIndex ? indexExpression.left : null, 'myArray');
   testInfixExpression(isIndex ? indexExpression.index : null, 1, '+', 1);
+});
+
+describe('Hash literals with string keys', () => {
+  const input = '{"one": 1, "two": 2, "three": 3}';
+
+  const { parser, program } = createProgram(input);
+
+  testParserErrors(parser);
+  testNumberOfStatements(program, 1);
+
+  const statement = program.statements[0] ?? null;
+  testExpressionStatement(statement);
+
+  const hashLiteral = isExpressionStatement(statement) ? statement.expression : null;
+  const isHashLiteral = isHashLiteralExpression(hashLiteral);
+
+  it('is a hash literal instance', () => {
+    expect(isHashLiteral).toBe(true);
+  });
+
+  it('has correct number of entries', () => {
+    expect(isHashLiteral && hashLiteral.entries.length).toBe(3);
+  });
+
+  const expected = { one: 1, two: 2, three: 3 };
+
+  (isHashLiteral ? hashLiteral.entries : []).forEach(([key, value], idx) => {
+    testStringLiteralExpression(key, Object.keys(expected)[idx] ?? '');
+
+    const expectedValue = expected[key.string() as keyof typeof expected];
+
+    testIntegerLiteralExpression(value, expectedValue);
+  });
+});
+
+describe('Hash literals with integer keys', () => {
+  const input = '{1: true, 2: false, 3: true}';
+
+  const { parser, program } = createProgram(input);
+
+  testParserErrors(parser);
+  testNumberOfStatements(program, 1);
+
+  const statement = program.statements[0] ?? null;
+  testExpressionStatement(statement);
+
+  const hashLiteral = isExpressionStatement(statement) ? statement.expression : null;
+  const isHashLiteral = isHashLiteralExpression(hashLiteral);
+
+  it('is a hash literal instance', () => {
+    expect(isHashLiteral).toBe(true);
+  });
+
+  it('has correct number of entries', () => {
+    expect(isHashLiteral && hashLiteral.entries.length).toBe(3);
+  });
+
+  const expected = { 1: true, 2: false, 3: true };
+
+  (isHashLiteral ? hashLiteral.entries : []).forEach(([key, value], idx) => {
+    testIntegerLiteralExpression(key, Number(Object.keys(expected)[idx]));
+
+    const expectedValue = expected[Number(key.string()) as keyof typeof expected];
+
+    testBoolExperssion(value, expectedValue);
+  });
+});
+
+describe('Hash literals with boolean keys', () => {
+  const input = '{true: "hello", false: "world"}';
+
+  const { parser, program } = createProgram(input);
+
+  testParserErrors(parser);
+  testNumberOfStatements(program, 1);
+
+  const statement = program.statements[0] ?? null;
+  testExpressionStatement(statement);
+
+  const hashLiteral = isExpressionStatement(statement) ? statement.expression : null;
+  const isHashLiteral = isHashLiteralExpression(hashLiteral);
+
+  it('is a hash literal instance', () => {
+    expect(isHashLiteral).toBe(true);
+  });
+
+  it('has correct number of entries', () => {
+    expect(isHashLiteral && hashLiteral.entries.length).toBe(2);
+  });
+
+  const expected = { true: 'hello', false: 'world' };
+
+  (isHashLiteral ? hashLiteral.entries : []).forEach(([key, value], idx) => {
+    testBoolExperssion(key, Object.keys(expected)[idx] === 'true' ? true : false);
+
+    const expectedValue = expected[key.string() as keyof typeof expected];
+
+    testStringLiteralExpression(value, expectedValue);
+  });
+});
+
+describe('Hash literals with expressions', () => {
+  const input = '{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}';
+
+  const { parser, program } = createProgram(input);
+
+  testParserErrors(parser);
+  testNumberOfStatements(program, 1);
+
+  const statement = program.statements[0] ?? null;
+  testExpressionStatement(statement);
+
+  const hashLiteral = isExpressionStatement(statement) ? statement.expression : null;
+  const isHashLiteral = isHashLiteralExpression(hashLiteral);
+
+  it('is a hash literal instance', () => {
+    expect(isHashLiteral).toBe(true);
+  });
+
+  it('has correct number of entries', () => {
+    expect(isHashLiteral && hashLiteral.entries.length).toBe(3);
+  });
+
+  const expected = {
+    one: (expression: Expression) => {
+      testInfixExpression(expression, 0, '+', 1);
+    },
+    two: (expression: Expression) => {
+      testInfixExpression(expression, 10, '-', 8);
+    },
+    three: (expression: Expression) => {
+      testInfixExpression(expression, 15, '/', 5);
+    },
+  };
+
+  (isHashLiteral ? hashLiteral.entries : []).forEach(([key, value], idx) => {
+    testStringLiteralExpression(key, Object.keys(expected)[idx] ?? '');
+
+    expected[key.string() as keyof typeof expected]?.(value);
+  });
+});
+
+describe('Empty hash literals', () => {
+  const input = `{}`;
+
+  const { parser, program } = createProgram(input);
+
+  testParserErrors(parser);
+  testNumberOfStatements(program, 1);
+
+  const statement = program.statements[0] ?? null;
+
+  testExpressionStatement(statement);
+
+  const hashLiteral = isExpressionStatement(statement) ? statement.expression : null;
+  const isHashLiteral = isHashLiteralExpression(hashLiteral);
+
+  it('is a hash literal instance', () => {
+    expect(isHashLiteral).toBe(true);
+  });
+
+  it('has correct number of entries', () => {
+    expect(isHashLiteral && hashLiteral.entries.length).toBe(0);
+  });
 });
 
 function testLetStatement(statement: Statement | null, name: string): void {
@@ -562,6 +721,17 @@ function testIntegerLiteralExpression(expression: Expression | null, value: numb
     expect(isIntegerLiteral).toBe(true);
     expect(isIntegerLiteral && expression.value).toBe(value);
     expect(expression?.tokenLiteral()).toBe(value.toString());
+  });
+}
+
+function testStringLiteralExpression(expression: Expression | null, value: string): void {
+  const isString = isStringLiteralExpression(expression);
+  it('is an instance of string literal', () => {
+    expect(isString).toBe(true);
+  });
+
+  it('has correct string value', () => {
+    expect(isString && expression.value).toBe(value);
   });
 }
 
@@ -691,4 +861,8 @@ function isArrayLiteralExpression(expression: Expression | null): expression is 
 
 function isIndexExpression(expression: Expression | null): expression is IndexExpression {
   return expression instanceof IndexExpression;
+}
+
+function isHashLiteralExpression(expression: Expression | null): expression is HashLiteral {
+  return expression instanceof HashLiteral;
 }
