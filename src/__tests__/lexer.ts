@@ -11,6 +11,7 @@ let ten = 10;
    "foobar"
    "foo bar"
    [1, 2];
+   {"foo": "bar"}
    `;
 
   const lexer = new Lexer(input);
@@ -61,6 +62,11 @@ let ten = 10;
       { type: TOKEN_TYPE.INT, literal: '2' },
       { type: TOKEN_TYPE.RBRACKET, literal: ']' },
       { type: TOKEN_TYPE.SEMICOLON, literal: ';' },
+      { type: TOKEN_TYPE.LBRACE, literal: '{' },
+      { type: TOKEN_TYPE.STRING, literal: 'foo' },
+      { type: TOKEN_TYPE.COLON, literal: ':' },
+      { type: TOKEN_TYPE.STRING, literal: 'bar' },
+      { type: TOKEN_TYPE.RBRACE, literal: '}' },
       { type: TOKEN_TYPE.EOF, literal: '' },
     ];
 

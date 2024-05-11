@@ -22,6 +22,7 @@ export const TOKEN_TYPE = {
   // Delimeters
   COMMA: ',',
   SEMICOLON: ';',
+  COLON: ':',
 
   LPAREN: '(',
   RPAREN: ')',
