@@ -445,6 +445,14 @@ describe('Builtin functions', () => {
       input: 'len("four")',
       expected: 4,
     },
+    {
+      input: 'len([1, 2, 3])',
+      expected: 3,
+    },
+    {
+      input: 'let x = [true, 1, "hi"]; len(x)',
+      expected: 3,
+    },
   ];
 
   tests.forEach(({ input, expected }) => {
