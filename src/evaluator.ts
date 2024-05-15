@@ -131,11 +131,13 @@ export function evl(node: Node | null, env: Environment): Obj {
 }
 
 function evlIndexExpression(left: Obj, index: Obj): Obj {
-  if (left.type() !== OBJECT_TYPE.ARRAY_OBJ || index.type() !== OBJECT_TYPE.INTEGER_OBJ) {
-    return new Error(`index operator not supported: ${left.type()}`);
+  if (left.type() === OBJECT_TYPE.ARRAY_OBJ && index.type() === OBJECT_TYPE.INTEGER_OBJ) {
+    return evlArrayIndexExpression(left as Array, index as Integer);
+  } else if (left.type() === OBJECT_TYPE.HASH_OBJ) {
+    return evlHashIndexExpression(left as Hash, index);
   }
 
-  return evlArrayIndexExpression(left as Array, index as Integer);
+  return new Error(`index operator not supported: ${left.type()}`);
 }
 
 function evlArrayIndexExpression(left: Array, index: Integer): Obj {
@@ -145,6 +147,14 @@ function evlArrayIndexExpression(left: Array, index: Integer): Obj {
   if (idx < 0 || idx > max) return NULL;
 
   return left.elements[idx]!;
+}
+
+function evlHashIndexExpression(left: Hash, index: Obj): Obj {
+  if (!isHashable(index)) {
+    return new Error(`unusable as hash key: ${index.type()}`);
+  }
+
+  return left.entries.get(index.hashKey())?.value ?? NULL;
 }
 
 function evlProgram(program: Program, env: Environment): Obj {
@@ -373,6 +383,6 @@ function isError(obj: Obj): obj is Error {
   return obj.type() === OBJECT_TYPE.ERROR_OBJ;
 }
 
-function isHashable(obj: Obj): obj is (Hashable & Obj) {
+function isHashable(obj: Obj): obj is Hashable & Obj {
   return 'hashKey' in obj;
 }
