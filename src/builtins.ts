@@ -88,6 +88,11 @@ export const BUILTINS = {
 
     return new Array([...arr.elements, newElem]);
   }),
+
+  puts: new Builtin((...args) => {
+    console.log(...args.map((arg) => arg.inspect()));
+    return NULL;
+  }),
 } as const satisfies Record<string, Builtin>;
 
 export function isBuiltin(value: string): value is keyof typeof BUILTINS {
