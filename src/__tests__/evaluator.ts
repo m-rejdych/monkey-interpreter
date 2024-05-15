@@ -1,5 +1,17 @@
-import { Obj, Integer, Bool, Null, Error, Environment, Function, String, Array } from '../object';
-import { evl } from '../evaluator';
+import {
+  Obj,
+  Integer,
+  Bool,
+  Null,
+  Error,
+  Environment,
+  Function,
+  String,
+  Array,
+  Hash,
+  HashKey,
+} from '../object';
+import { evl, TRUE, FALSE } from '../evaluator';
 import { createProgram } from '../util/program';
 
 describe('Evaluate integer expression', () => {
@@ -545,6 +557,48 @@ describe('Index expressions', () => {
   });
 });
 
+describe('Hash literals', () => {
+  const input = `let two = "two";
+  {
+    "one": 10 - 9,
+    two: 1 + 1,
+    "thr" + "ee": 6 / 2,
+    4: 4,
+    true: 5,
+    false: 6
+  }
+  `;
+
+  const evaluated = runTestEval(input);
+
+  const isHash = isHashObject(evaluated);
+  it('is an instance of Hash', () => {
+    expect(isHash).toBe(true);
+  });
+
+  const expected: Map<HashKey, number> = new Map();
+  expected.set(new String('one').hashKey(), 1);
+  expected.set(new String('two').hashKey(), 2);
+  expected.set(new String('three').hashKey(), 3);
+  expected.set(new Integer(4).hashKey(), 4);
+  expected.set(TRUE.hashKey(), 5);
+  expected.set(FALSE.hashKey(), 6);
+
+  it('has correct number of pairs', () => {
+    expect(isHash && evaluated.entries.size === expected.size).toBe(true);
+  });
+
+  expected.forEach((value, key) => {
+    const pair = isHash ? evaluated.entries.get(key) : null;
+
+    it('has a pair for given key', () => {
+      expect(pair).toBeTruthy();
+    });
+
+    testIntegerObject(pair?.value ?? null, value);
+  });
+});
+
 function runTestEval(input: string): Obj {
   const { program } = createProgram(input);
 
@@ -585,7 +639,6 @@ function testStringObject(obj: Obj, value: string): void {
   it('has correct value', () => {
     expect(isString && obj.value).toBe(value);
   });
-
 }
 
 function testNullObject(obj: Obj): void {
@@ -633,4 +686,8 @@ function isErrorObject(err: Obj): err is Error {
 
 function isArrayObject(arr: Obj): arr is Array {
   return arr instanceof Array;
+}
+
+function isHashObject(hash: Obj): hash is Hash {
+  return hash instanceof Hash;
 }

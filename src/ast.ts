@@ -315,6 +315,6 @@ export class HashLiteral implements Expression {
   }
 
   string() {
-    return `{${this.entries.map(([key, value]) => `${key.string()}:${value.string()}`)}}`;
+    return `{${this.entries.map(([key, value]) => `${key.string()}: ${value.string()}`)}}`;
   }
 }

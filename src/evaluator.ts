@@ -17,6 +17,7 @@ import {
   StringLiteral,
   ArrayLiteral,
   IndexExpression,
+  HashLiteral,
 } from './ast';
 import {
   OBJECT_TYPE,
@@ -32,11 +33,15 @@ import {
   String,
   Builtin,
   Array,
+  Hash,
+  Hashable,
+  HashKey,
+  HashPair,
 } from './object';
 import { BUILTINS, isBuiltin } from './builtins';
 
-const TRUE = new Bool(true);
-const FALSE = new Bool(false);
+export const TRUE = new Bool(true);
+export const FALSE = new Bool(false);
 export const NULL = new Null();
 const EARLY_RETURN_OBJECT_TYPES: ObjType[] = [OBJECT_TYPE.RETURN_VALUE_OBJ, OBJECT_TYPE.ERROR_OBJ];
 
@@ -116,6 +121,9 @@ export function evl(node: Node | null, env: Environment): Obj {
       const index = evl(nd.index, env);
       if (isError(index)) return left;
       return evlIndexExpression(left, index);
+    }
+    case HashLiteral: {
+      return evlHashLiteral(node as HashLiteral, env);
     }
     default:
       return NULL;
@@ -297,6 +305,28 @@ function evlExpressions(expressions: Expression[], env: Environment): Obj[] {
   return result;
 }
 
+function evlHashLiteral(hash: HashLiteral, env: Environment): Hash {
+  const pairs: Map<HashKey, HashPair> = new Map();
+
+  hash.entries.forEach(([keyExpression, valueExpression]) => {
+    const key = evl(keyExpression, env);
+    if (isError(key)) return key;
+
+    const isKeyHashable = isHashable(key);
+    if (!isKeyHashable) {
+      return new Error(`unusable as hash key: ${key.type()}`);
+    }
+
+    const value = evl(valueExpression, env);
+    if (isError(value)) return value;
+
+    const hashed = key.hashKey();
+    pairs.set(hashed, new HashPair(key, value));
+  });
+
+  return new Hash(pairs);
+}
+
 function applyFunction(func: Obj, args: Obj[]): Obj {
   switch (Object.getPrototypeOf(func).constructor) {
     case Function: {
@@ -341,4 +371,8 @@ function isTruthy(obj: Obj): boolean {
 
 function isError(obj: Obj): obj is Error {
   return obj.type() === OBJECT_TYPE.ERROR_OBJ;
+}
+
+function isHashable(obj: Obj): obj is (Hashable & Obj) {
+  return 'hashKey' in obj;
 }
